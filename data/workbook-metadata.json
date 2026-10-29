@@ -1,0 +1,195 @@
+{
+  "source": "Bivacco Backlog.xlsx",
+  "rows": 146,
+  "uniqueNames": 57,
+  "embeddedMedia": [],
+  "sheets": [
+    {
+      "sheet": "Été",
+      "rowCount": 38,
+      "headers": [
+        "État",
+        "Cabane / lieu",
+        "Photo",
+        "Secteur",
+        "Alt. cabane (m)",
+        "Départ été",
+        "Altitude départ été (m)",
+        "Trajet voiture",
+        "Montée (h) ≈",
+        "D+ (m) ≈",
+        "Classement saison /5",
+        "Isolement /5",
+        "Probabilité d'être seul /5",
+        "Ambiance /5",
+        "Vue /5",
+        "Rating global /5",
+        "Coup de cœur",
+        "Description",
+        "Fiche officielle",
+        "Google Maps",
+        "Photos / galerie",
+        "Source altitude / accès",
+        "Fiabilité des données",
+        "Notes originales",
+        "Score global précis"
+      ],
+      "comments": {
+        "Probabilité d'être seul /5": "Probabilité indicative de trouver la cabane vide, sur 5 : 1 = forte fréquentation ; 5 = fortes chances d'être seul. Estimation relative (isolement, fréquentation, difficulté d'accès et saison), non issue de réservations.",
+        "Rating global /5": "Rating affiché : entier sur 5, calculé depuis la colonne masquée « Score global précis ». Celle-ci contient le calcul pondéré à deux décimales, intégrant l'isolement, la probabilité d'être seul, le trajet, l'attrait et la pénalité du risque."
+      },
+      "hiddenColumns": [
+        {
+          "hidden": "1",
+          "min": "25",
+          "max": "25",
+          "width": "12.63"
+        }
+      ]
+    },
+    {
+      "sheet": "Automne",
+      "rowCount": 55,
+      "headers": [
+        "État",
+        "Cabane / lieu",
+        "Photo",
+        "Secteur",
+        "Alt. cabane (m)",
+        "Départ été",
+        "Altitude départ été (m)",
+        "Départ hiver",
+        "Altitude départ hiver (m)",
+        "Trajet voiture",
+        "Montée (h) ≈",
+        "D+ (m) ≈",
+        "Classement saison /5",
+        "Isolement /5",
+        "Probabilité d'être seul /5",
+        "Ambiance /5",
+        "Vue /5",
+        "Rating global /5",
+        "Risque hiver",
+        "Coup de cœur",
+        "Description",
+        "Fiche officielle",
+        "Google Maps",
+        "Photos / galerie",
+        "Source altitude / accès",
+        "Fiabilité des données",
+        "Notes originales",
+        "Score global précis"
+      ],
+      "comments": {
+        "Rating global /5": "Rating affiché : entier sur 5, calculé depuis la colonne masquée « Score global précis ». Celle-ci contient le calcul pondéré à deux décimales, intégrant l'isolement, la probabilité d'être seul, le trajet, l'attrait et la pénalité du risque.",
+        "Risque hiver": "Score structurel du risque hivernal (avalanche, terrain exposé, obstacles) : 1 = faible, 2 = modéré, 3 = modéré à élevé, 4 = élevé, 5 = très élevé. Ne représente pas le BERA du jour.",
+        "Probabilité d'être seul /5": "Probabilité indicative de trouver la cabane vide, sur 5 : 1 = forte fréquentation ; 5 = fortes chances d'être seul. Estimation relative (isolement, fréquentation, difficulté d'accès et saison), non issue de réservations."
+      },
+      "hiddenColumns": [
+        {
+          "hidden": "1",
+          "min": "28",
+          "max": "28",
+          "width": "12.63"
+        }
+      ]
+    },
+    {
+      "sheet": "Hiver",
+      "rowCount": 18,
+      "headers": [
+        "État",
+        "Cabane / lieu",
+        "Photo",
+        "Secteur",
+        "Alt. cabane (m)",
+        "Départ hiver",
+        "Altitude départ hiver (m)",
+        "Trajet voiture",
+        "Montée (h) ≈",
+        "D+ (m) ≈",
+        "Classement saison /5",
+        "Isolement /5",
+        "Probabilité d'être seul /5",
+        "Ambiance /5",
+        "Vue /5",
+        "Rating global /5",
+        "Risque hiver",
+        "Difficulté ski (FR)",
+        "Coup de cœur",
+        "Description",
+        "Fiche officielle",
+        "Google Maps",
+        "Photos / galerie",
+        "Source altitude / accès",
+        "Source cotation C2C",
+        "Fiabilité des données",
+        "Notes originales",
+        "Score global précis"
+      ],
+      "comments": {
+        "Risque hiver": "Score structurel du risque hivernal (avalanche, terrain exposé, obstacles) : 1 = faible, 2 = modéré, 3 = modéré à élevé, 4 = élevé, 5 = très élevé. Ne représente pas le BERA du jour.",
+        "Probabilité d'être seul /5": "Probabilité indicative de trouver la cabane vide, sur 5 : 1 = forte fréquentation ; 5 = fortes chances d'être seul. Estimation relative (isolement, fréquentation, difficulté d'accès et saison), non issue de réservations.",
+        "Rating global /5": "Rating affiché : entier sur 5, calculé depuis la colonne masquée « Score global précis ». Celle-ci contient le calcul pondéré à deux décimales, intégrant l'isolement, la probabilité d'être seul, le trajet, l'attrait et la pénalité du risque."
+      },
+      "hiddenColumns": [
+        {
+          "customWidth": "1",
+          "hidden": "1",
+          "min": "28",
+          "max": "28",
+          "width": "45.75"
+        }
+      ]
+    },
+    {
+      "sheet": "Printemps",
+      "rowCount": 35,
+      "headers": [
+        "État",
+        "Cabane / lieu",
+        "Photo",
+        "Secteur",
+        "Alt. cabane (m)",
+        "Départ été",
+        "Altitude départ été (m)",
+        "Départ hiver",
+        "Altitude départ hiver (m)",
+        "Trajet voiture",
+        "Montée (h) ≈",
+        "D+ (m) ≈",
+        "Classement saison /5",
+        "Isolement /5",
+        "Probabilité d'être seul /5",
+        "Ambiance /5",
+        "Vue /5",
+        "Rating global /5",
+        "Risque hiver",
+        "Difficulté ski (FR)",
+        "Coup de cœur",
+        "Description",
+        "Fiche officielle",
+        "Google Maps",
+        "Photos / galerie",
+        "Source altitude / accès",
+        "Source cotation C2C",
+        "Fiabilité des données",
+        "Notes originales",
+        "Score global précis"
+      ],
+      "comments": {
+        "Rating global /5": "Rating affiché : entier sur 5, calculé depuis la colonne masquée « Score global précis ». Celle-ci contient le calcul pondéré à deux décimales, intégrant l'isolement, la probabilité d'être seul, le trajet, l'attrait et la pénalité du risque.",
+        "Risque hiver": "Score structurel du risque hivernal (avalanche, terrain exposé, obstacles) : 1 = faible, 2 = modéré, 3 = modéré à élevé, 4 = élevé, 5 = très élevé. Ne représente pas le BERA du jour.",
+        "Probabilité d'être seul /5": "Probabilité indicative de trouver la cabane vide, sur 5 : 1 = forte fréquentation ; 5 = fortes chances d'être seul. Estimation relative (isolement, fréquentation, difficulté d'accès et saison), non issue de réservations."
+      },
+      "hiddenColumns": [
+        {
+          "hidden": "1",
+          "min": "30",
+          "max": "30",
+          "width": "12.63"
+        }
+      ]
+    }
+  ]
+}

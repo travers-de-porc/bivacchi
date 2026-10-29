@@ -1,0 +1,64 @@
+import { lazy, Suspense, useMemo, useState, useSyncExternalStore } from 'react'
+import { ArrowDown, ArrowUpRight, Bookmark, Check, CheckCheck, Compass, Database, Download, Grid2X2, List, Map, Mountain, Search, SlidersHorizontal, Tent, X } from 'lucide-react'
+import { BivouacCard, BivouacTable } from './components/BivouacCard'
+import { BivouacDetail } from './components/BivouacDetail'
+import { DataDialog } from './components/DataDialog'
+import { Filters } from './components/Filters'
+import { InstallButton } from './components/InstallButton'
+import { Button } from './components/ui/button'
+import { Dialog } from './components/ui/dialog'
+import { useBivouacs } from './hooks/useBivouacs'
+import { DEFAULT_FILTERS, filterBivouacs } from './lib/filters'
+import { downloadFile } from './lib/utils'
+const MapView = lazy(() => import('./components/MapView'))
+const subscribeHash = (callback: () => void) => { window.addEventListener('hashchange', callback); return () => window.removeEventListener('hashchange', callback) }
+const readHash = () => window.location.hash
+
+export default function App() {
+  const { bivouacs, update, importData, storageError, recovery, reset } = useBivouacs()
+  const [filters, setFilters] = useState(DEFAULT_FILTERS)
+  const [view, setView] = useState<'cards' | 'list' | 'map'>('cards')
+  const [dataOpen, setDataOpen] = useState(false)
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [resetOpen, setResetOpen] = useState(false)
+  const hash = useSyncExternalStore(subscribeHash, readHash)
+  let selectedId = ''
+  try { selectedId = hash.startsWith('#/bivouac/') ? decodeURIComponent(hash.slice(10)) : '' } catch { selectedId = 'invalid' }
+  const selected = bivouacs.find(b => b.id === selectedId)
+  const visible = useMemo(() => filterBivouacs(bivouacs, filters), [bivouacs, filters])
+  const wishlistCount = bivouacs.filter(b => b.wishlist).length
+  const visitedCount = bivouacs.filter(b => b.visited).length
+  const locatedCount = bivouacs.filter(b => b.coordinates).length
+  const openBivouac = (id: string) => { window.location.hash = `/bivouac/${encodeURIComponent(id)}` }
+  const closeBivouac = () => { window.location.hash = '/' }
+  const activeFilterCount = Number(filters.season !== 'all') + [filters.sector, filters.altitude, filters.ascent, filters.isolation, filters.ski, filters.located].filter(Boolean).length
+  const collection = filters.status === 'wishlist' ? 'Les lieux qui vous appellent' : filters.status === 'visited' ? 'Des souvenirs là-haut' : 'Trouvez votre prochaine échappée'
+  const nav = <>
+    <button className={filters.status === 'all' ? 'active' : ''} aria-current={filters.status === 'all' ? 'page' : undefined} onClick={() => setFilters({ ...filters, status: 'all' })}><Compass size={17} /><span>Explorer</span></button>
+    <button className={filters.status === 'wishlist' ? 'active' : ''} aria-current={filters.status === 'wishlist' ? 'page' : undefined} onClick={() => setFilters({ ...filters, status: 'wishlist' })}><Bookmark size={17} /><span>Mes envies</span><small>{wishlistCount}</small></button>
+    <button className={filters.status === 'visited' ? 'active' : ''} aria-current={filters.status === 'visited' ? 'page' : undefined} onClick={() => setFilters({ ...filters, status: 'visited' })}><CheckCheck size={17} /><span>Mes visites</span><small>{visitedCount}</small></button>
+  </>
+  return <>
+    <a href="#explorer" className="skip-link">Aller aux bivouacs</a>
+    <header className="site-header"><div className="header-inner"><a href="#/" className="brand" onClick={() => setFilters(DEFAULT_FILTERS)} aria-label="Bivacco Explorer, accueil"><span className="brand-icon"><Mountain size={25} strokeWidth={1.5} /></span><span>Bivacco<span className="brand-subtitle">EXPLORER</span></span></a><nav className="desktop-nav" aria-label="Navigation principale">{nav}</nav><div className="header-actions"><InstallButton /><Button variant="outline" size="sm" aria-label="Mes données" onClick={() => setDataOpen(true)}><Database size={15} /><span>Mes données</span></Button></div></div></header>
+    <main>
+      <section className="hero"><div className="hero-content"><p className="eyebrow"><span className="tiny-dash" /> LE CARNET DES NUITS LÀ-HAUT</p><h1>Un peu plus près<br />des <em>sommets.</em></h1><p className="hero-description">Des abris singuliers. Des vallées à explorer.<br />Et cette envie de prendre un peu de hauteur.</p><a className="hero-link" href="#explorer">Trouver mon prochain bivouac <ArrowDown size={15} /></a></div><div className="hero-art" aria-hidden="true"><svg viewBox="0 0 600 310" fill="none"><g stroke="currentColor" strokeWidth="1"><path d="M-40 270Q80 160 125 195T240 125T360 140T620 100"/><path d="M-40 288Q80 180 125 213T240 143T360 158T620 118"/><path d="M-40 306Q80 200 125 231T240 161T360 176T620 136"/><path d="M-40 324Q80 220 125 249T240 179T360 194T620 154"/><path d="M-40 342Q80 240 125 267T240 197T360 212T620 172"/><path d="M-40 360Q80 260 125 285T240 215T360 230T620 190"/><path d="M-40 378Q80 280 125 303T240 233T360 248T620 208"/><path d="M-40 396Q80 300 125 321T240 251T360 266T620 226"/></g><g stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"><path d="M95 190 245 40 357 162 420 100 570 256"/><path d="m185 100 21 16 39-76 25 86 29-27"/><path d="m245 40 15 153 97-31"/><path d="m380 137 40-37 24 65 17-22"/><path d="m95 190 70-6 80-144"/></g><circle cx="245" cy="40" r="6" stroke="currentColor"/><circle cx="245" cy="40" r="2" fill="currentColor"/><path d="M335 65h30m-15-15v30" stroke="currentColor" opacity=".5"/><circle cx="492" cy="43" r="28" stroke="currentColor" opacity=".4"/></svg><div className="art-label"><Tent size={19} /><span>La montagne pour horizon.</span></div><span className="art-north">N<br />↑</span></div><div className="hero-summary"><span><strong>{bivouacs.length}</strong>lieux à découvrir</span><span><strong>4</strong>saisons d’aventure</span><span><strong>{locatedCount}</strong>lieux sur la carte</span></div></section>
+      {storageError && <div className="storage-warning page-width" role="alert"><p>{storageError}</p><div className="inline-actions">{recovery && <Button variant="outline" size="sm" onClick={() => downloadFile(recovery, 'bivacco-recuperation.json', 'application/json')}><Download size={15} />Récupérer la sauvegarde</Button>}<Button variant="outline" size="sm" onClick={() => setResetOpen(true)}>Réinitialiser le stockage local</Button></div></div>}
+      <section id="explorer" className="explorer page-width"><div className="explorer-heading"><div><p className="eyebrow">{filters.status === 'all' ? 'LE GOÛT DE L’AILLEURS' : 'MON CARNET ALPIN'}</p><h2>{collection}</h2></div><span className="local-status"><span /> Carnet personnel · sauvegarde locale</span></div>
+        <div className="explorer-layout"><aside className="desktop-filters"><Filters filters={filters} onChange={setFilters} bivouacs={bivouacs} /></aside><div className="results-panel"><div className="search-toolbar"><div className="search-field"><Search size={18} /><input aria-label="Rechercher un bivouac" placeholder="Un bivouac, une vallée, une envie…" value={filters.search} onChange={e => setFilters({ ...filters, search: e.target.value })} />{filters.search && <button aria-label="Effacer la recherche" onClick={() => setFilters({ ...filters, search: '' })}><X size={16} /></button>}</div><Button className="mobile-filter-button" variant="outline" onClick={() => setFiltersOpen(true)} aria-label={`Filtres${activeFilterCount ? `, ${activeFilterCount} actifs` : ''}`}><SlidersHorizontal size={17} />Filtres{activeFilterCount > 0 && <span className="filter-count">{activeFilterCount}</span>}</Button></div>
+          <div className="results-toolbar"><p aria-live="polite"><strong>{visible.length}</strong> {visible.length > 1 ? 'bivouacs' : 'bivouac'}{filters.status !== 'all' && <span> · {filters.status === 'wishlist' ? 'dans mes envies' : 'visité' + (visible.length > 1 ? 's' : '')}</span>}</p><div className="results-tools"><label className="sort-field"><span>Trier par</span><select aria-label="Trier les bivouacs" value={filters.sort} onChange={e => setFilters({ ...filters, sort: e.target.value })}><option value="name">Nom</option><option value="altitude-desc">Altitude décroissante</option><option value="altitude-asc">Altitude croissante</option><option value="ascent">Montée la plus courte</option><option value="score">Score du carnet</option></select></label><div className="view-toggle" role="group" aria-label="Mode d’affichage">{([{ id: 'cards', label: 'Cartes', icon: Grid2X2 }, { id: 'list', label: 'Liste', icon: List }, { id: 'map', label: 'Carte géographique', icon: Map }] as const).map(({ id, label, icon: Icon }) => <button key={id} aria-label={label} title={label} aria-pressed={view === id} className={view === id ? 'selected' : ''} onClick={() => setView(id)}><Icon size={17} /></button>)}</div></div></div>
+          {activeFilterCount > 0 && <div className="active-filters">{filters.season !== 'all' && <span className="tag">{filters.season}</span>}{filters.sector && <span className="tag">{filters.sector}</span>}<button className="text-button" onClick={() => setFilters({ ...DEFAULT_FILTERS, search: filters.search, status: filters.status })}>Effacer {activeFilterCount} filtre{activeFilterCount > 1 ? 's' : ''}<X size={12} /></button></div>}
+          {view === 'map' ? <Suspense fallback={<div className="empty-state"><Map size={32} /><p>La carte se déplie…</p></div>}><MapView bivouacs={visible} onSelect={openBivouac} /></Suspense> : visible.length ? view === 'cards' ? <div className="cards-grid">{visible.map(bivouac => <BivouacCard key={bivouac.id} bivouac={bivouac} season={filters.season} onOpen={openBivouac} onUpdate={update} />)}</div> : <BivouacTable bivouacs={visible} season={filters.season} onOpen={openBivouac} onUpdate={update} /> : <div className="empty-state"><Tent size={46} strokeWidth={1.2} /><h3>{filters.status === 'wishlist' ? 'Votre prochaine aventure commence ici' : filters.status === 'visited' ? 'Les souvenirs restent à écrire' : 'Aucun bivouac à cet horizon'}</h3><p>{filters.status === 'wishlist' ? 'Ajoutez des lieux à vos envies avec le marque-page de chaque fiche.' : filters.status === 'visited' ? 'Marquez vos bivouacs visités depuis leur fiche pour les retrouver ici.' : 'Essayez un autre nom ou élargissez vos critères.'}</p><Button variant="outline" onClick={() => setFilters(DEFAULT_FILTERS)}>Explorer tous les bivouacs <ArrowUpRight size={16} /></Button></div>}
+          <p className="results-footnote">{filters.season === 'all' ? 'Les cartes présentent le premier accès saisonnier disponible. Choisissez une saison pour comparer.' : `Accès et évaluations du carnet pour ${filters.season.toLocaleLowerCase('fr')}.`} Les estimations et notes originales sont détaillées dans chaque fiche.</p>
+        </div></div>
+      </section>
+    </main>
+    <footer className="site-footer page-width"><div className="footer-signature"><Mountain size={22} /><span>Bivacco Explorer<small>Le bonheur est un peu plus haut.</small></span></div><span>Un carnet personnel, de nouveaux horizons.</span><button className="text-button" onClick={() => setDataOpen(true)}>Sauvegarder mes données <ArrowUpRight size={14} /></button></footer>
+    <nav className="mobile-nav" aria-label="Navigation mobile">{nav}</nav>
+    <Dialog open={filtersOpen} onOpenChange={setFiltersOpen} title="Trouver votre échappée" className="filter-dialog"><Filters filters={filters} onChange={setFilters} bivouacs={bivouacs} /><div className="filter-dialog-footer"><Button onClick={() => setFiltersOpen(false)}><Check size={16} />Afficher {visible.length} bivouacs</Button></div></Dialog>
+    <DataDialog open={dataOpen} onOpenChange={setDataOpen} bivouacs={bivouacs} onImport={importData} />
+    {selected && <BivouacDetail key={selected.id} bivouac={selected} onClose={closeBivouac} onUpdate={update} initialSeason={filters.season} />}
+    {selectedId && !selected && <Dialog open onOpenChange={closeBivouac} title="Bivouac introuvable"><div className="install-help"><p>Ce lieu ne figure pas dans votre carnet. Il a peut-être été importé dans un autre navigateur.</p><Button onClick={closeBivouac}>Revenir au carnet</Button></div></Dialog>}
+    <Dialog open={resetOpen} onOpenChange={setResetOpen} title="Réinitialiser ce navigateur ?" description="Le carnet d’origine sera restauré. Les imports, notes, envies et visites locales seront supprimés."><div className="install-help"><p>Conservez d’abord un export CSV ou la copie de récupération proposée. Le classeur original reste intact.</p><div className="inline-actions"><Button variant="outline" onClick={() => setResetOpen(false)}>Annuler</Button><Button onClick={() => { reset(); setResetOpen(false) }}>Restaurer le carnet d’origine</Button></div></div></Dialog>
+  </>
+}

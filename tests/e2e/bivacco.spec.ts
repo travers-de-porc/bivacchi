@@ -1,0 +1,151 @@
+import { expect, test, type Page } from '@playwright/test'
+import { readFile } from 'node:fs/promises'
+
+const runtimeErrors = new WeakMap<Page, string[]>()
+
+// Remote imagery and map tiles are not required for any local-first interaction.
+// Blocking them makes these checks deterministic and also exercises fallback UI.
+test.beforeEach(async ({ page }) => {
+  const errors: string[] = []
+  runtimeErrors.set(page, errors)
+  page.on('pageerror', error => errors.push(error.message))
+  await page.route('**/*', route => new URL(route.request().url()).origin === 'http://127.0.0.1:4173' ? route.continue() : route.abort())
+  await page.goto('/', { waitUntil: 'domcontentloaded' })
+  await expect(page.locator('.bivouac-card')).toHaveCount(57)
+})
+
+test.afterEach(async ({ page }) => {
+  expect(runtimeErrors.get(page)).toEqual([])
+})
+
+async function openArben(page: Page) {
+  await page.getByRole('textbox', { name: 'Rechercher un bivouac' }).fill('Arbenbiwak')
+  await page.getByRole('link', { name: 'Arbenbiwak SAC', exact: true }).click()
+  await expect(page.getByRole('dialog')).toBeVisible()
+}
+
+async function importFixture(page: Page, content: string, filename = 'fixture.csv') {
+  await page.getByLabel('Fichier CSV à importer').setInputFiles({ name: filename, mimeType: 'text/csv', buffer: Buffer.from(content) })
+}
+
+test('search is accent-insensitive and seasonal cards agree with the list', async ({ page }) => {
+  await page.getByRole('textbox', { name: 'Rechercher un bivouac' }).fill('herens')
+  await expect(page.locator('.bivouac-card').first()).toContainText('Hérens')
+  await page.getByRole('button', { name: 'Effacer la recherche', exact: true }).click()
+  await page.getByRole('button', { name: 'Hiver', exact: true }).click()
+  await expect(page.locator('.bivouac-card')).toHaveCount(18)
+  await expect(page.locator('.season-caption').first()).toHaveText('Accès hiver')
+  await page.getByRole('button', { name: 'Liste', exact: true }).click()
+  await expect(page.locator('.bivouac-table tbody tr')).toHaveCount(18)
+  await page.getByRole('button', { name: 'Toutes les saisons', exact: true }).click()
+  await expect(page.locator('.bivouac-table tbody tr')).toHaveCount(57)
+})
+
+test('details navigation and personal edits survive reload with valid paired coordinates', async ({ page }) => {
+  await openArben(page)
+  await expect(page).toHaveURL(/#\/bivouac\/arbenbiwak-sac-/)
+  await page.goBack({ waitUntil: 'domcontentloaded' })
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await page.getByRole('link', { name: 'Arbenbiwak SAC', exact: true }).click()
+  await page.getByRole('button', { name: 'Ajouter à mes envies', exact: true }).click()
+  await page.getByRole('button', { name: 'Marquer comme visité', exact: true }).click()
+  await page.getByRole('button', { name: 'Modifier', exact: true }).click()
+  await page.getByLabel('Nom du bivouac', { exact: true }).fill('Arbenbiwak — carnet de test')
+  await page.getByLabel('Mes notes personnelles', { exact: true }).fill('Note de test\nPréserver les sources.')
+  await page.getByLabel('Latitude', { exact: true }).fill('45')
+  await page.getByRole('button', { name: 'Enregistrer', exact: true }).click()
+  await expect(page.getByRole('alert')).toContainText('ensemble la latitude et la longitude')
+  await page.getByLabel('Longitude', { exact: true }).fill('7')
+  await page.getByRole('button', { name: 'Enregistrer', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Arbenbiwak — carnet de test', exact: true })).toBeVisible()
+  await page.reload({ waitUntil: 'domcontentloaded' })
+  await expect(page.getByRole('button', { name: 'Dans mes envies', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('button', { name: 'Déjà visité', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByText('Note de test\nPréserver les sources.', { exact: true })).toBeVisible()
+  await expect(page.getByText('Coordonnées : 45, 7', { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'Fermer', exact: true }).click()
+  await page.getByRole('button', { name: 'Carte géographique', exact: true }).click()
+  await expect(page.locator('.leaflet-marker-icon')).toHaveCount(3)
+})
+
+test('map displays only supplied coordinates and explains unlocated selections', async ({ page }) => {
+  await page.getByRole('button', { name: 'Carte géographique', exact: true }).click()
+  await expect(page.locator('.leaflet-marker-icon')).toHaveCount(2)
+  await expect(page.locator('.map-missing-note')).toContainText('55 bivouacs sans coordonnées')
+  await expect(page.locator('.leaflet-control-attribution')).toContainText('OpenStreetMap')
+  await page.getByRole('combobox', { name: 'Le terrain de jeu', exact: true }).selectOption('Valais')
+  await expect(page.locator('.leaflet-marker-icon')).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: 'Aucun bivouac localisé dans cette sélection' })).toBeVisible()
+})
+
+test('CSV import is previewed, malformed input is rejected, and the download restores personal state', async ({ page }) => {
+  await openArben(page)
+  await page.getByRole('button', { name: 'Ajouter à mes envies', exact: true }).click()
+  await page.getByRole('button', { name: 'Fermer', exact: true }).click()
+  await page.getByRole('button', { name: 'Mes données', exact: true }).click()
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Exporter en CSV', exact: true }).click()
+  const download = await downloadPromise
+  const filePath = await download.path()
+  expect(filePath).toBeTruthy()
+  const backup = await readFile(filePath!, 'utf8')
+  expect(backup).toContain('__bivacco_raw')
+  expect(backup).toContain('__bivacco_edits')
+  await importFixture(page, 'Cabane / lieu,Latitude,Longitude\nAbri de test,91,7')
+  await expect(page.getByRole('alert')).toContainText('paire valide')
+  await expect(page.getByRole('button', { name: 'Confirmer l’import' })).toHaveCount(0)
+  await importFixture(page, 'Cabane / lieu,Secteur,Saison,Alt. cabane (m),Colonne personnelle\nAbri de test (fixture),Secteur de test,Été,2000,À conserver')
+  await expect(page.locator('.import-preview')).toContainText('1 lignes · 1 lieux détectés')
+  await page.getByRole('button', { name: 'Confirmer l’import', exact: true }).click()
+  await expect(page.getByRole('status')).toContainText('1 lieux importés')
+  await page.getByRole('button', { name: 'Fermer', exact: true }).click()
+  await page.getByRole('button', { name: 'Effacer la recherche', exact: true }).click()
+  await expect(page.locator('.bivouac-card')).toHaveCount(58)
+  await page.evaluate(() => localStorage.clear())
+  await page.reload({ waitUntil: 'domcontentloaded' })
+  await expect(page.locator('.bivouac-card')).toHaveCount(57)
+  await page.getByRole('button', { name: 'Mes données', exact: true }).click()
+  await importFixture(page, backup, 'sauvegarde.csv')
+  await expect(page.locator('.import-preview')).toContainText('restaure aussi vos envies')
+  await page.getByRole('button', { name: 'Confirmer l’import', exact: true }).click()
+  await page.getByRole('button', { name: 'Fermer', exact: true }).click()
+  await page.getByRole('navigation', { name: 'Navigation principale' }).getByRole('button', { name: /Mes envies/ }).click()
+  await expect(page.locator('.bivouac-card')).toHaveCount(1)
+  await expect(page.locator('.bivouac-card')).toContainText('Arbenbiwak SAC')
+})
+
+test('phone navigation, filters, and details fit a 390px viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect(page.getByRole('navigation', { name: 'Navigation mobile' })).toBeVisible()
+  await expect(page.locator('.header-actions > button').last()).toHaveAccessibleName('Mes données')
+  await expect(page.locator('.install-button')).toHaveAccessibleName('Installer l’application')
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+  await page.getByRole('button', { name: 'Filtres', exact: true }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Hiver', exact: true }).click()
+  await page.getByRole('button', { name: 'Afficher 18 bivouacs', exact: true }).click()
+  await expect(page.locator('.bivouac-card')).toHaveCount(18)
+  await page.locator('.card-content h3 a').first().click()
+  await expect(page.getByRole('dialog')).toBeVisible()
+  const bounds = await page.getByRole('dialog').boundingBox()
+  expect(bounds!.x).toBeGreaterThanOrEqual(0)
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(390)
+  await page.getByRole('button', { name: 'Fermer', exact: true }).click()
+  await page.getByRole('navigation', { name: 'Navigation mobile' }).getByRole('button', { name: /Mes envies/ }).click()
+  await expect(page.getByRole('heading', { name: 'Votre prochaine aventure commence ici' })).toBeVisible()
+})
+
+test('production service worker makes the app and saved wishes available after an offline reload', async ({ page, context }) => {
+  await page.evaluate(async () => { await navigator.serviceWorker.ready })
+  await openArben(page)
+  await page.getByRole('button', { name: 'Ajouter à mes envies', exact: true }).click()
+  await page.getByRole('button', { name: 'Fermer', exact: true }).click()
+  await page.reload({ waitUntil: 'domcontentloaded' })
+  await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true)
+  await context.setOffline(true)
+  await page.reload({ waitUntil: 'domcontentloaded' })
+  await expect(page.getByRole('heading', { name: 'Un peu plus près des sommets.' })).toBeVisible()
+  await expect(page.locator('.bivouac-card')).toHaveCount(57)
+  await page.getByRole('navigation', { name: 'Navigation principale' }).getByRole('button', { name: /Mes envies/ }).click()
+  await expect(page.locator('.bivouac-card')).toHaveCount(1)
+  await expect(page.locator('.bivouac-card')).toContainText('Arbenbiwak SAC')
+})

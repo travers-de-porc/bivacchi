@@ -1,0 +1,45 @@
+# Feuille de route — Bivacco Explorer
+
+## Phase 1 · Carnet local
+
+Première version : interface française responsive React / TypeScript, données du classeur conservées dans un CSV, exploration par cartes et liste, fiches détaillées, filtres, carte Leaflet / OpenStreetMap, envies et visites, édition locale, import/export CSV et installation PWA. Hébergement statique prévu sur Cloudflare Pages.
+
+Les données manquantes restent explicites. Les scores et les accès du backlog gardent leur provenance et leur saison. Une occurrence dans une feuille saisonnière n’est pas une observation datée des conditions de terrain.
+
+## Phase 2 · Persistance partagée
+
+- Introduire Supabase PostgreSQL, Auth et Storage derrière le contrat de persistance existant.
+- Migrer les sauvegardes locales sans perdre les données sources ni les modifications personnelles.
+- Ajouter comptes, règles d’accès par groupe, historique des modifications et gestion des conflits.
+- Enrichir progressivement les coordonnées, la capacité et l’équipement avec leurs sources ; ne pas déduire ces faits d’un simple nom ou secteur.
+- Définir la stratégie hors ligne et la synchronisation avant d’activer les écritures collaboratives.
+
+## Phase 3 · Choisir et partir ensemble
+
+- Listes partagées et sélections de bivouacs entre amis.
+- Votes et notes personnelles distincts des scores importés.
+- Planification de sorties, participants et historique des visites.
+- Comparaison de lieux avec provenance explicite des données manquantes ou contradictoires.
+
+## Phase 4 · Collecte de récits de sorties
+
+- Développer des agents Python séparés du frontend.
+- Collecter les récits de sources autorisées avec URL, auteur, date de sortie, date de publication et date de collecte.
+- Préserver l’extrait source et les éventuelles restrictions d’utilisation.
+- Ajouter une validation humaine, la déduplication et un suivi des erreurs avant publication.
+
+## Phase 5 · Observations structurées
+
+- Utiliser xAI pour proposer des extractions liées à chaque récit, avec confiance et provenance.
+- Séparer neige, accès routier, occupation, eau et état des itinéraires des caractéristiques permanentes d’un bivouac.
+- Dater chaque observation et rendre visibles les contradictions et informations périmées.
+- Ne jamais convertir silencieusement une estimation ou un témoignage en état actuel garanti.
+
+## Phase 6 · Historique et recherche
+
+- Explorer l’évolution saisonnière et historique des observations.
+- Mettre en place une recherche sémantique et des questions en langage naturel avec citations des récits.
+- Combiner filtres structurés et recherche textuelle sans masquer les limites des sources.
+- Évaluer la qualité des réponses et des extractions sur des exemples vérifiés.
+
+Ces phases futures ne sont pas implémentées dans la version locale. Leur ordre et leur périmètre pourront évoluer selon l’usage réel du carnet.
