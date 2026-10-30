@@ -73,23 +73,24 @@ La PWA est activée dans le build de production, désactivée avec `npm run dev`
 
 Après une première ouverture en ligne et la mise en cache terminée, l’interface, le jeu de données initial et les ressources locales sont disponibles hors connexion. Les modifications locales restent enregistrées. Les tuiles OpenStreetMap, les pages sources et les éventuelles images distantes nécessitent une connexion. Les tuiles ne sont ni préchargées ni conservées par le service worker. Une mise à jour du site prend effet après fermeture des onglets de l’ancienne version puis réouverture, afin de ne pas interrompre une modification en cours.
 
-## Cloudflare Pages
+## Cloudflare Workers
 
-Ce dépôt produit un site entièrement statique. Aucune clé, variable secrète, base de données ou fonction serveur n’est requise.
+Le site reste entièrement statique. `wrangler.jsonc` configure le Worker **`bivacchi`** pour servir `dist/`, avec un repli SPA et des aperçus de branches. Aucun backend ou compte utilisateur n’est ajouté.
 
-La procédure complète pour le dépôt GitHub `travers-de-porc/bivacchi`, la configuration de Pages, les sauvegardes personnelles et les contrôles PWA est dans [DEPLOYMENT.md](DEPLOYMENT.md).
-
-Configurer un projet Cloudflare Pages avec :
+Sur l’écran GitHub **Workers → Set up your application** :
 
 | Paramètre | Valeur |
 | --- | --- |
-| Dossier racine | Racine de ce dépôt |
-| Commande de build | `npm ci && npm run build` |
-| Dossier de sortie | `dist` |
-| Version de Node.js | `24.22.1`, lue dans `.node-version` |
-| Variable de build (Production et Preview) | `SKIP_DEPENDENCY_INSTALL=1` pour laisser `npm ci` installer une seule fois |
+| Project name | `bivacchi` |
+| Build command | `npm run build` |
+| Deploy command | `npx wrangler deploy` |
+| Preview command | `npx wrangler preview` |
+| Path | `/` |
+| Version Node.js | `24.22.1`, lue dans `.node-version` |
 
-Pages fournit le repli SPA natif en l’absence de `404.html` à la racine. `public/_redirects` conserve uniquement cette explication, sans règle globale qui intercepterait les ressources. `public/_headers` configure les en-têtes des fichiers statiques et du service worker. Le site est conçu pour être servi à la racine d’un domaine. Aucun déploiement n’est nécessaire pour le développement local.
+Envoyer d’abord la configuration Wrangler et les fichiers `package.json` / `package-lock.json` sur GitHub. Workers Builds installe les dépendances automatiquement ; laisser `SKIP_DEPENDENCY_INSTALL` non défini avec cette commande de build. Le token de déploiement est créé et géré dans le tableau de bord Cloudflare, jamais dans le dépôt.
+
+La procédure complète, les contrôles PWA et le parcours **Cloudflare Pages en alternative** sont dans [DEPLOYMENT.md](DEPLOYMENT.md). Les chemins restent à la racine du domaine. `public/_headers` s’applique aux ressources statiques ; `public/_redirects` n’ajoute aucune règle globale.
 
 ## Architecture et suite
 
@@ -102,7 +103,8 @@ Pages fournit le repli SPA natif en l’absence de `404.html` à la racine. `pub
 - `src/App.tsx` et `src/index.css` : navigation, assemblage des vues et identité visuelle responsive.
 - `data/` : classeur original et CSV extrait.
 - `scripts/` : conversion reproductible indépendante du frontend.
-- `public/` : icônes, ressources statiques et configuration Cloudflare Pages.
+- `public/` : icônes, ressources statiques et en-têtes Cloudflare.
+- `wrangler.jsonc` : publication des ressources statiques sur Workers et repli SPA.
 - `pwa.config.ts` : manifeste et politique de cache de l’application.
 
 Les conventions de contribution sont dans [AGENTS.md](AGENTS.md). Les prochaines étapes sont dans [ROADMAP.md](ROADMAP.md). Supabase, la collaboration et les agents d’ingestion ne font pas partie de cette version.
