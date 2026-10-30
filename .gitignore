@@ -8,3 +8,22 @@ dist/
 playwright-report/
 test-results/
 .DS_Store
+
+# Local tooling state and credentials
+.agents/
+.codex/
+.aws/
+.wrangler/
+.dev.vars
+.dev.vars.*
+.npmrc
+*.pem
+*.key
+*.log
+
+# Personal backups and imports (the initial dataset in data/ stays tracked)
+/backups/
+/exports/
+/local-data/
+bivacco-explorer-*.csv
+bivacco-recuperation*.json

@@ -4,7 +4,7 @@ Un carnet personnel de bivouacs alpins, en français, conçu pour préparer la p
 
 ## Démarrer
 
-Prérequis : Node.js 22.12+ (ou Node.js 24 LTS) et npm. Python 3 est nécessaire uniquement pour reconvertir le classeur source.
+Prérequis : Node.js 22.12+ et npm. La version de déploiement vérifiée est fixée dans `.node-version` (24.22.1) ; utiliser cette même version pour reproduire le build. Python 3 est nécessaire uniquement pour reconvertir le classeur source.
 
 ```sh
 npm ci
@@ -77,6 +77,8 @@ Après une première ouverture en ligne et la mise en cache terminée, l’inter
 
 Ce dépôt produit un site entièrement statique. Aucune clé, variable secrète, base de données ou fonction serveur n’est requise.
 
+La procédure complète pour le dépôt GitHub `travers-de-porc/bivacchi`, la configuration de Pages, les sauvegardes personnelles et les contrôles PWA est dans [DEPLOYMENT.md](DEPLOYMENT.md).
+
 Configurer un projet Cloudflare Pages avec :
 
 | Paramètre | Valeur |
@@ -84,9 +86,10 @@ Configurer un projet Cloudflare Pages avec :
 | Dossier racine | Racine de ce dépôt |
 | Commande de build | `npm ci && npm run build` |
 | Dossier de sortie | `dist` |
-| Version de Node.js | `24` |
+| Version de Node.js | `24.22.1`, lue dans `.node-version` |
+| Variable de build (Production et Preview) | `SKIP_DEPENDENCY_INSTALL=1` pour laisser `npm ci` installer une seule fois |
 
-Les fichiers `public/_redirects` et `public/_headers` fournissent le repli SPA et des en-têtes adaptés aux ressources et au service worker. Le site est conçu pour être servi à la racine d’un domaine. Aucun déploiement n’est nécessaire pour le développement local.
+Pages fournit le repli SPA natif en l’absence de `404.html` à la racine. `public/_redirects` conserve uniquement cette explication, sans règle globale qui intercepterait les ressources. `public/_headers` configure les en-têtes des fichiers statiques et du service worker. Le site est conçu pour être servi à la racine d’un domaine. Aucun déploiement n’est nécessaire pour le développement local.
 
 ## Architecture et suite
 

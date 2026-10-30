@@ -1,1 +1,3 @@
-/* /index.html 200
+# Pages provides the SPA fallback automatically when there is no root 404.html.
+# Keep existing assets (especially /assets/* and /sw.js) out of catch-all rewrites.
+# https://developers.cloudflare.com/pages/configuration/serving-pages/
