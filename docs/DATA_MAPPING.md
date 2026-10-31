@@ -1,8 +1,17 @@
 # Origine et correspondance des données
 
-## Fichier réellement fourni
+## Fichiers sources actuels
 
-Le dépôt initial contenait **`data/Bivacco Backlog.xlsx`**, et aucun `data/bivouacs.csv`. Le classeur est conservé sans modification. Le CSV utilisé par l'application est sa conversion reproductible :
+L'application utilise désormais les deux CSV enrichis fournis par l'utilisateur :
+
+- **`data/Bivacco_Explorer_enrichi.csv`** : 146 lignes saisonnières, 57 lieux distincts, 53 colonnes ; source des métadonnées, coordonnées, photos et évaluations saisonnières.
+- **`data/Bivacco_Explorer_sources_et_controles.csv`** : 57 lignes, 10 colonnes ; une ligne de provenance et de contrôle par lieu. Ce fichier ne décrit ni des saisons supplémentaires, ni des comptes rendus datés.
+
+Les lieux, secteurs, saisons et évaluations correspondent au backlog initial. L'enrichissement ajoute les positions, leur provenance et leur fiabilité, ainsi que des liens et statuts de photographies. Il ne crée aucune évaluation personnelle. Les valeurs et formules fournies dans ces fichiers sont conservées telles quelles ; certains retours à la ligne des notes diffèrent de ceux du CSV historique.
+
+### Source historique et conversion
+
+Le dépôt initial contenait **`data/Bivacco Backlog.xlsx`**, et aucun `data/bivouacs.csv`. Le classeur et son CSV historique restent conservés sans modification. La conversion suivante produit uniquement `data/bivouacs.csv` et `data/workbook-metadata.json` ; elle ne régénère pas les deux CSV enrichis et ne remplace pas le jeu initial chargé par l'application :
 
 ```sh
 python3 scripts/convert_workbook.py
@@ -74,7 +83,32 @@ Les champs numériques absents restent `null`. Les valeurs de notes non numériq
 
 Le CSV converti compte 46 colonnes. Aucune colonne originale n'est abandonnée. Les attributs de présentation Excel (couleurs, tailles, mise en page) ne sont pas des métadonnées de bivouac ; le classeur original les conserve.
 
-## Coordonnées et images
+### Colonnes d'enrichissement et fichier de contrôle
+
+| Colonne ajoutée au CSV enrichi | Champ / traitement |
+| --- | --- |
+| Latitude, Longitude | `coordinates` : paire explicite valide ; aucune position n'est déduite d'un nom. |
+| GPS [source] | Provenance affichée comme lien HTTP(S) ou texte ; le texte de Chillol renvoie aux coordonnées déjà présentes dans le fichier initial. |
+| GPS [fiabilité] | Qualification fournie affichée littéralement, sans validation indépendante. |
+| Google Maps GPS [URL] | Lien vers les coordonnées fournies, distinct du lien Google Maps original. |
+| Photo [source] | Provenance de l'image ; ne constitue pas une autorisation de réutilisation. |
+| Photo [statut] | Statut fourni, distinct de la disponibilité effective de l'image distante. |
+
+Les colonnes existantes `Photo [URL]` et `Photo [formule]` contiennent aussi les photos ajoutées. Les 53 colonnes du CSV enrichi restent disponibles dans les lignes source.
+
+Le fichier de contrôle est rapproché par nom **et** secteur normalisés (espaces périphériques, casse et accents), sans rapprochement approximatif. Chaque lieu doit avoir exactement une ligne ; les coordonnées, l'altitude, les liens photo et les indications de provenance présents doivent correspondre au CSV enrichi. Un doublon, un lieu inconnu, une ligne manquante ou une divergence bloque l'assemblage du jeu initial au lieu de choisir silencieusement une version.
+
+Chaque ligne de contrôle complète, y compris ses colonnes inconnues, est conservée sous forme JSON dans `Sources et contrôles [données]` sur la première ligne source du lieu. `Sources et contrôles [source]` et `Sources et contrôles [ligne]` identifient le fichier et sa ligne. `getEnrichment` expose ces métadonnées pour l'affichage ; aucune ligne saisonnière n'est créée. Ces trois champs additionnels sont conservés par l'export et le réimport existants. Les coordonnées de source restent accessibles séparément des corrections locales.
+
+## Coordonnées et images actuelles
+
+Les **57 lieux ont maintenant une paire de coordonnées explicite valide**. La validité numérique n'est pas une certification géographique. Les qualifications fournies sont conservées, notamment **« à vérifier : sources discordantes » pour Bivacco Carpano** et **« indicative » pour Bivacco Antigine**. Les sources n'ont pas été revisitées automatiquement ; aucune date de contrôle n'est inventée. Une modification manuelle des coordonnées est distinguée des coordonnées documentées dans le fichier.
+
+Le CSV enrichi fournit **56 URL de photographies** : les 30 préexistantes et 26 ajoutées. La photo de **Capanna Luigina Resegotti** est indiquée comme « non trouvée — recherche manuelle » ; son lien de recherche ne devient pas une image. Les statuts « préexistante — disponibilité non testée » et « ajoutée — URL image directe » restent ceux du fichier. Aucun téléchargement de vérification ni cache persistant des images distantes n'est ajouté ; une image inaccessible conserve le remplacement visuel existant.
+
+Les imports acceptent `Latitude`/`Longitude` ou `latitude`/`longitude`, `lat`/`lng`/`lon` ; les nombres décimaux avec virgule sont acceptés dans un champ CSV correctement délimité. Les liens non HTTP(S) ne sont pas rendus cliquables.
+
+### Coordonnées et images du classeur historique
 
 Il n'existe aucune colonne latitude/longitude dans le classeur. Seuls deux liens Google Maps contiennent des coordonnées numériques explicites :
 
@@ -83,7 +117,7 @@ Il n'existe aucune colonne latitude/longitude dans le classeur. Seuls deux liens
 | Cabane du berger de Chillol (coord.) | 44.565 | 6.837222 |
 | Bivacco Franco Boerio | 44.61497 | 6.95069 |
 
-Les **55 autres lieux ne sont pas positionnés**. Les identifiants de lieux Google, recherches textuelles et centres de caméra `@lat,lng` ne sont pas transformés en coordonnées. Aucun géocodage ni enrichissement extérieur n'est effectué. L'utilisateur peut renseigner une paire latitude/longitude manuellement. Les imports acceptent `Latitude`/`Longitude` ou `latitude`/`longitude`, `lat`/`lng`/`lon` ; les nombres décimaux avec virgule sont acceptés dans un champ CSV correctement délimité.
+Dans le CSV historique, les **55 autres lieux n'étaient pas positionnés**. Les identifiants de lieux Google, recherches textuelles et centres de caméra `@lat,lng` ne sont toujours pas transformés en coordonnées. Aucun géocodage n'est effectué ; les nouvelles positions proviennent exclusivement des fichiers enrichis fournis.
 
 Le classeur ne contient **aucune image incorporée**. Il fournit 30 URL distinctes de photographies via des formules `IMAGE`, et des liens de recherche pour les autres lieux. Ces recherches ne sont pas traitées comme des photographies. Les URL sont conservées sans téléchargement au moment de la conversion. Leur accessibilité dépend du site d'origine ; elles ne sont pas garanties hors ligne. Les liens non HTTP(S) ne sont pas rendus cliquables.
 
@@ -116,6 +150,18 @@ La fusion conserve les lieux existants et ajoute les nouveaux. Elle rapproche d'
 
 Les colonnes inconnues sont toujours conservées dans `rawRecords[].values` et réexportées. Une sauvegarde Bivacco réimportée utilise `__bivacco_raw` et `__bivacco_edits` comme source fidèle ; une édition manuelle des seules colonnes visibles d'une sauvegarde ne remplace pas ces blocs. Pour importer un tableau externe modifié manuellement, retirer les quatre colonnes `__bivacco_*` et conserver la colonne de nom ; les données originales antérieures resteront dans la collection lors de la fusion.
 
+## Actualisation des carnets déjà enregistrés
+
+Le dépôt local reconnaît les sauvegardes antérieures sans `seedRevision`. `src/lib/seed-update.ts` compare le CSV historique, le carnet sauvegardé et le jeu enrichi : seules les valeurs restées égales au jeu historique sont actualisées. Les corrections de nom, secteur, altitude, texte ou coordonnées, les envies, visites, notes personnelles et les lieux ajoutés restent conservés. Les lignes d'imports personnels restent prioritaires pour leurs images et liens ; les lignes historiques et les nouveaux contrôles sont conservés ensemble dans l'export.
+
+Les différences de retours à la ligne CRLF/LF ne créent pas de profils saisonniers en double. Le texte exact demeure dans chaque ligne source. Un carnet actualisé peut donc exporter plus de 146 lignes, puisqu'il conserve aussi ses sources historiques et ses imports.
+
+La lecture n'écrit pas dans `localStorage`. La révision `enriched-2026-10` est enregistrée à la prochaine sauvegarde, empêchant de réappliquer l'enrichissement à une suppression volontaire de coordonnées faite ensuite. Une révision inconnue protège la sauvegarde contre l'écrasement. Une future mise à jour du jeu initial devra disposer de sa propre migration explicite.
+
 ## Vérifications
 
 `tests/csv.test.ts` couvre le classeur réel, les coordonnées explicites, les 30 images, les formules d'origine, le réimport complet avec nom modifié et notes multilignes, les séparateurs, les champs inconnus, les imports invalides, les liens dangereux, la neutralisation de formules et la fusion des données personnelles.
+
+`src/lib/enrichment.test.ts` couvre les deux fichiers enrichis réels (57 positions, 56 photos, 146 lignes saisonnières), les réserves de fiabilité, le contrôle des correspondances, la conservation des colonnes inconnues et le réimport sans perte des lignes de contrôle après une modification locale.
+
+`src/lib/seed-update.test.ts` couvre l'actualisation du carnet historique, la conservation des corrections et imports personnels, l'absence de doublons saisonniers et la protection des suppressions volontaires après migration. Les tests navigateur vérifient également les 57 marqueurs, les sources, la reprise d'un ancien carnet et l'utilisation hors connexion.

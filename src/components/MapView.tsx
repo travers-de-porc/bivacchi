@@ -4,6 +4,7 @@ import { MapContainer, Marker, Popup, TileLayer, ZoomControl, useMap } from 'rea
 import { ArrowUpRight, LocateFixed, MapPin, Mountain, RefreshCw, WifiOff } from 'lucide-react'
 import type { Bivouac, Coordinates } from '../types/bivouac'
 import { isValidCoordinates } from '../lib/csv'
+import { getEnrichment } from '../lib/enrichment'
 import 'leaflet/dist/leaflet.css'
 import './MapView.css'
 
@@ -60,6 +61,13 @@ function FrameMap({ positions }: { positions: LatLngTuple[] }) {
       <LocateFixed size={19} aria-hidden="true" />
     </button>
   )
+}
+
+function GpsReliability({ bivouac }: { bivouac: LocatedBivouac }) {
+  const enrichment = getEnrichment(bivouac)
+  const changedCoordinates = enrichment.coordinates !== null && (bivouac.coordinates.lat !== enrichment.coordinates.lat || bivouac.coordinates.lng !== enrichment.coordinates.lng)
+  if (changedCoordinates) return <p>Coordonnées modifiées localement</p>
+  return enrichment.gpsReliability ? <p>Fiabilité GPS déclarée : {enrichment.gpsReliability}</p> : null
 }
 
 export default function MapView({ bivouacs, onSelect }: MapViewProps) {
@@ -120,6 +128,7 @@ export default function MapView({ bivouacs, onSelect }: MapViewProps) {
                   <span className="map-popup-sector">{bivouac.sector || 'Secteur non renseigné'}</span>
                   <h3>{bivouac.name}</h3>
                   <p><Mountain size={15} aria-hidden="true" />{bivouac.altitudeM === null ? 'Altitude non renseignée' : `${bivouac.altitudeM.toLocaleString('fr-FR')} m`}</p>
+                  <GpsReliability bivouac={bivouac} />
                   <button type="button" onClick={() => onSelect(bivouac.id)}>Découvrir le bivouac <ArrowUpRight size={16} aria-hidden="true" /></button>
                 </div>
               </Popup>

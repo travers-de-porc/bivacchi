@@ -38,7 +38,7 @@ npm test
 npm run build
 ```
 
-Le build vérifie TypeScript et produit `dist/`, dont `index.html`, `assets/`, `manifest.webmanifest`, `registerSW.js`, `sw.js`, les icônes, `_headers` et `_redirects`. Le fichier `package-lock.json` est versionné et doit rester synchronisé avec `package.json`. Aucun script de conversion Python n’est nécessaire sur Cloudflare : `data/bivouacs.csv` est déjà suivi par Git.
+Le build vérifie TypeScript et produit `dist/`, dont `index.html`, `assets/`, `manifest.webmanifest`, `registerSW.js`, `sw.js`, les icônes, `_headers` et `_redirects`. Le fichier `package-lock.json` est versionné et doit rester synchronisé avec `package.json`. Aucun script de conversion Python n’est nécessaire sur Cloudflare : les CSV de `data/` sont incorporés au build. Inclure les deux fichiers enrichis dans le commit envoyé à GitHub.
 
 Pour examiner le résultat localement :
 
@@ -57,7 +57,7 @@ Les essais locaux ne valident pas les en-têtes HTTP appliqués par Cloudflare ;
 
 ## 2. Préserver les données personnelles et les secrets
 
-- **Données initiales à conserver dans Git** : `data/Bivacco Backlog.xlsx`, `data/bivouacs.csv` et `data/workbook-metadata.json`. Le CSV, y compris ses notes et sources d’origine, est incorporé au JavaScript livré aux visiteurs. Un dépôt GitHub privé ne rend pas le site déployé privé.
+- **Données initiales à conserver dans Git** : `data/Bivacco Backlog.xlsx`, `data/bivouacs.csv`, `data/workbook-metadata.json`, `data/Bivacco_Explorer_enrichi.csv` et `data/Bivacco_Explorer_sources_et_controles.csv`. Les CSV, y compris leurs notes et sources d’origine, sont incorporés au JavaScript livré aux visiteurs. Un dépôt GitHub privé ne rend pas le site déployé privé.
 - **Modifications personnelles** : envies, visites, notes et imports restent dans le `localStorage` du navigateur ; ils ne sont pas lus par le build et ne sont pas envoyés à GitHub ou Cloudflare.
 - **Sauvegardes téléchargées** : les noms `bivacco-explorer-*.csv` et `bivacco-recuperation*.json` sont ignorés. Placer les fichiers personnels renommés ou les imports de travail dans `backups/`, `exports/` ou `local-data/`, également ignorés. Ne pas les copier dans `data/` ou `public/` : `public/` est publié intégralement, même pour un fichier ignoré par Git lors d’un build local.
 - **Fichiers locaux** : `.env`, `.env.*`, `.dev.vars*`, `.npmrc`, `.aws/`, `.codex/`, `.agents/`, `.wrangler/`, clés privées, logs, dépendances, `dist/` et résultats des tests sont exclus. `.env.example` peut être suivi, mais doit contenir uniquement des exemples sans secret.
@@ -130,7 +130,7 @@ Les fiches utilisent des URL `/#/bivouac/<identifiant>`. Le fragment est traité
 
 Après publication :
 
-1. Vérifier les 57 lieux initiaux, la recherche, les filtres, les fiches et les deux marqueurs issus des coordonnées présentes dans la source. Recharger directement l’URL d’une fiche.
+1. Vérifier les 57 lieux initiaux, la recherche, les filtres, les fiches et les 57 marqueurs issus des coordonnées explicites du CSV enrichi. Vérifier les mentions de fiabilité GPS dans les fiches. Recharger directement l’URL d’une fiche.
 2. Dans **DevTools → Network**, vérifier que le JavaScript et le CSS sous `/assets/` sont servis avec leur bon type, et non avec du HTML. `/sw.js` doit être du JavaScript, `/manifest.webmanifest` du JSON de manifeste et les icônes de vraies images.
 3. Contrôler les en-têtes de `/`, `/sw.js`, `/registerSW.js` et `/manifest.webmanifest` : `Cache-Control: no-cache`. Les fichiers hashés de `/assets/` ont `Cache-Control: public, max-age=31536000, immutable`. `_headers` est une configuration des ressources statiques, pas une page à visiter.
 4. Dans **DevTools → Application**, vérifier le manifeste, ses icônes 192/512 px et maskable, puis le service worker actif avec portée `/`.

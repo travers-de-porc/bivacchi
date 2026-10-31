@@ -81,6 +81,8 @@ Do not implement future phases unless explicitly requested.
 ## Phase 1 repository conventions
 
 - `data/Bivacco Backlog.xlsx` is the supplied original. Do not overwrite it. The initially requested CSV did not exist; `scripts/convert_workbook.py` generates `data/bivouacs.csv` from the four seasonal sheets using Python's standard library.
+- The current bundled dataset is `data/Bivacco_Explorer_enrichi.csv`, joined with `data/Bivacco_Explorer_sources_et_controles.csv` by normalized name and sector. Preserve both supplied files. The original conversion remains a historical baseline for upgrading existing local storage; do not regenerate it from the enriched files.
+- `src/lib/enrichment.ts` preserves the full controls row in source attributes without adding a seasonal profile. Display declared GPS/photo provenance, including uncertainty, separately from local coordinate corrections. `src/lib/seed-update.ts` compares old, current and new values to preserve personal changes; the repository records the applied seed revision when saving. Future dataset revisions need an explicit migration, not a storage reset.
 - Read `docs/DATA_MAPPING.md` before changing mappings or import/export behavior. Preserve the original fields, seasonal rows, formulas, link labels and targets even when the UI uses normalized values.
 - `src/types/` owns strict domain types; `src/lib/` owns CSV conversion and shared business rules; `src/components/` owns React presentation. Keep persistence isolated from UI so a future Supabase adapter can replace localStorage.
 - Keep one place distinct from its seasonal access records. Seasonal ratings are imported assessments, not live conditions. Future trip reports must be separately dated and source-backed.

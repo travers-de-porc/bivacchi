@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
+import { exportBivouacsCsv, parseBivouacsCsv } from '../../src/lib/csv'
 
 const runtimeErrors = new WeakMap<Page, string[]>()
 
@@ -53,6 +54,7 @@ test('details navigation and personal edits survive reload with valid paired coo
   await page.getByLabel('Nom du bivouac', { exact: true }).fill('Arbenbiwak — carnet de test')
   await page.getByLabel('Mes notes personnelles', { exact: true }).fill('Note de test\nPréserver les sources.')
   await page.getByLabel('Latitude', { exact: true }).fill('45')
+  await page.getByLabel('Longitude', { exact: true }).fill('')
   await page.getByRole('button', { name: 'Enregistrer', exact: true }).click()
   await expect(page.getByRole('alert')).toContainText('ensemble la latitude et la longitude')
   await page.getByLabel('Longitude', { exact: true }).fill('7')
@@ -63,19 +65,73 @@ test('details navigation and personal edits survive reload with valid paired coo
   await expect(page.getByRole('button', { name: 'Déjà visité', exact: true })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByText('Note de test\nPréserver les sources.', { exact: true })).toBeVisible()
   await expect(page.getByText('Coordonnées : 45, 7', { exact: true })).toBeVisible()
+  await expect(page.getByText('Coordonnées modifiées localement. La fiabilité GPS déclarée concerne la position du fichier source.', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Fermer', exact: true }).click()
   await page.getByRole('button', { name: 'Carte géographique', exact: true }).click()
-  await expect(page.locator('.leaflet-marker-icon')).toHaveCount(3)
+  await expect(page.locator('.leaflet-marker-icon')).toHaveCount(57)
 })
 
 test('map displays only supplied coordinates and explains unlocated selections', async ({ page }) => {
   await page.getByRole('button', { name: 'Carte géographique', exact: true }).click()
-  await expect(page.locator('.leaflet-marker-icon')).toHaveCount(2)
-  await expect(page.locator('.map-missing-note')).toContainText('55 bivouacs sans coordonnées')
+  await expect(page.locator('.leaflet-marker-icon')).toHaveCount(57)
+  await expect(page.locator('.map-missing-note')).toHaveCount(0)
   await expect(page.locator('.leaflet-control-attribution')).toContainText('OpenStreetMap')
-  await page.getByRole('combobox', { name: 'Le terrain de jeu', exact: true }).selectOption('Valais')
+  await page.getByRole('button', { name: 'Mes données', exact: true }).click()
+  await importFixture(page, 'Cabane / lieu,Secteur,Saison\nAbri sans position (fixture),Secteur de test,Été')
+  await page.getByRole('button', { name: 'Confirmer l’import', exact: true }).click()
+  await page.getByRole('button', { name: 'Fermer', exact: true }).click()
+  await page.getByRole('textbox', { name: 'Rechercher un bivouac' }).fill('Abri sans position (fixture)')
   await expect(page.locator('.leaflet-marker-icon')).toHaveCount(0)
+  await expect(page.locator('.map-missing-note')).toContainText('1 bivouac sans coordonnées')
   await expect(page.getByRole('heading', { name: 'Aucun bivouac localisé dans cette sélection' })).toBeVisible()
+})
+
+test('enriched GPS reliability and source controls remain visible in the details', async ({ page }) => {
+  for (const [name, reliability] of [
+    ['Bivacco Carpano', 'à vérifier : sources discordantes'],
+    ['Bivacco Antigine', 'indicative'],
+  ]) {
+    await page.getByRole('textbox', { name: 'Rechercher un bivouac' }).fill(name)
+    await page.getByRole('link', { name, exact: true }).click()
+    await expect(page.getByText(`Fiabilité GPS déclarée : ${reliability}`, { exact: true })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Source des coordonnées GPS', exact: true })).toHaveAttribute('href', /^https?:\/\//)
+    const controls = page.locator('.source-record').filter({ has: page.locator('summary', { hasText: 'Sources et contrôles' }) })
+    await controls.locator('summary').click()
+    await expect(controls.getByRole('row').filter({ has: page.getByRole('rowheader', { name: 'GPS [fiabilité]', exact: true }) })).toContainText(reliability)
+    await expect(controls).toContainText('Bivacco_Explorer_sources_et_controles.csv')
+    await expect(page.getByText(/Photo — statut dans le fichier source :/)).toBeVisible()
+    await page.getByRole('button', { name: 'Fermer', exact: true }).click()
+  }
+})
+
+test('a previous local notebook receives enrichment without losing edits or imported places', async ({ page }) => {
+  const source = await readFile(new URL('../../data/bivouacs.csv', import.meta.url), 'utf8')
+  const legacy = parseBivouacsCsv(source, 'Bivacco Backlog.xlsx').bivouacs
+  const arben = legacy.find(item => item.name === 'Arbenbiwak SAC')!
+  arben.name = 'Arbenbiwak — mon carnet existant'
+  arben.wishlist = true
+  arben.visited = true
+  arben.personalNotes = 'Note conservée avant enrichissement.'
+  arben.coordinates = { lat: 45.5, lng: 7.25 }
+  legacy.push(...parseBivouacsCsv('Cabane / lieu,Secteur,Saison\nAbri ajouté avant enrichissement,Mon secteur,Été', 'import-personnel.csv').bivouacs)
+  const backup = JSON.stringify({ version: 1, csv: exportBivouacsCsv(legacy), savedAt: '2026-10-01T00:00:00.000Z' })
+  await page.evaluate(value => localStorage.setItem('bivacco-explorer:v1', value), backup)
+  await page.reload({ waitUntil: 'domcontentloaded' })
+  await expect(page.locator('.bivouac-card')).toHaveCount(58)
+  await expect(page.getByRole('alert')).toHaveCount(0)
+  await expect(page.getByRole('link', { name: 'Abri ajouté avant enrichissement', exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'Carte géographique', exact: true }).click()
+  await expect(page.locator('.leaflet-marker-icon')).toHaveCount(57)
+  await page.getByRole('button', { name: 'Cartes', exact: true }).click()
+  await page.getByRole('textbox', { name: 'Rechercher un bivouac' }).fill('Arbenbiwak')
+  await page.getByRole('link', { name: arben.name, exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Dans mes envies', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('button', { name: 'Déjà visité', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByText(arben.personalNotes, { exact: true })).toBeVisible()
+  await expect(page.getByText('Coordonnées : 45.5, 7.25', { exact: true })).toBeVisible()
+  await expect(page.getByText('Coordonnées modifiées localement. La fiabilité GPS déclarée concerne la position du fichier source.', { exact: true })).toBeVisible()
+  await expect(page.getByRole('group', { name: 'Saison des données affichées' }).getByRole('button')).toHaveCount(arben.seasons.length)
+  await expect(page.locator('summary').filter({ hasText: 'Sources et contrôles' })).toBeVisible()
 })
 
 test('CSV import is previewed, malformed input is rejected, and the download restores personal state', async ({ page }) => {

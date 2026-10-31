@@ -34,6 +34,9 @@ export function isValidCoordinates(value: unknown): value is Coordinates {
 
 const normalize = (value: string) => value.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('fr')
 const nonEmpty = (value: string | undefined) => value?.trim() || null
+// CRLF/LF variants of a note describe the same profile; raw source text stays untouched.
+const profileKey = (value: SeasonalProfile) => JSON.stringify(value, (_key, item: unknown) =>
+  typeof item === 'string' ? item.replace(/\r\n/g, '\n') : item)
 
 function valueOf(row: Record<string, string>, ...keys: string[]): string {
   for (const key of keys) if (row[key]?.trim()) return row[key].trim()
@@ -135,6 +138,16 @@ function profile(row: Record<string, string>, warnings: Set<string>): SeasonalPr
     reliability: nonEmpty(row['Fiabilité des données']),
     originalNotes: nonEmpty(row['Notes originales']),
   }
+}
+
+/** Derive profiles in source order after a dataset update, retaining distinct imported approaches. */
+export function profilesFromRecords(records: readonly SourceRecord[]): SeasonalProfile[] {
+  const profiles = new Map<string, SeasonalProfile>()
+  for (const record of records) {
+    const item = profile(record.values, new Set())
+    if (!profiles.has(profileKey(item))) profiles.set(profileKey(item), item)
+  }
+  return [...profiles.values()]
 }
 
 function parseJson(value: string, field: string, rowNumber: number): unknown {
@@ -263,7 +276,7 @@ export function parseBivouacsCsv(text: string, sourceName = 'Import CSV'): CsvIm
       }
       if (!existing.description) existing.description = valueOf(row, 'Description')
       if (!existing.highlight) existing.highlight = valueOf(row, 'Coup de cœur')
-      if (!existing.seasons.some((item) => JSON.stringify(item) === JSON.stringify(seasonal))) existing.seasons.push(seasonal)
+      if (!existing.seasons.some((item) => profileKey(item) === profileKey(seasonal))) existing.seasons.push(seasonal)
       existing.rawRecords.push(raw)
     } else {
       places.set(id, {
@@ -345,7 +358,11 @@ export function mergeBivouacs(existing: readonly Bivouac[], incoming: readonly B
   for (const item of incoming) {
     const current = merged.get(item.id) ?? [...merged.values()].find((candidate) => normalize(candidate.name) === normalize(item.name) && normalize(candidate.sector) === normalize(item.sector))
     if (!current) { merged.set(item.id, item); continue }
-    const unique = <T,>(items: T[]): T[] => [...new Map(items.map((value) => [JSON.stringify(value), value])).values()]
+    const unique = <T,>(items: T[], key: (value: T) => string = JSON.stringify): T[] => {
+      const values = new Map<string, T>()
+      for (const value of items) if (!values.has(key(value))) values.set(key(value), value)
+      return [...values.values()]
+    }
     merged.set(current.id, {
       ...current,
       ...item,
@@ -368,7 +385,7 @@ export function mergeBivouacs(existing: readonly Bivouac[], incoming: readonly B
         coordinates: item.coordinates ?? current.coordinates,
       } : {}),
       rawRecords: unique([...item.rawRecords, ...current.rawRecords]),
-      seasons: unique([...item.seasons, ...current.seasons]),
+      seasons: unique([...item.seasons, ...current.seasons], profileKey),
     })
   }
   return [...merged.values()]

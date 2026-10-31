@@ -2,7 +2,9 @@
 
 ## Phase 1 · Carnet local
 
-Première version : interface française responsive React / TypeScript, données du classeur conservées dans un CSV, exploration par cartes et liste, fiches détaillées, filtres, carte Leaflet / OpenStreetMap, envies et visites, édition locale, import/export CSV et installation PWA. Hébergement statique prévu sur Cloudflare Pages.
+Première version : interface française responsive React / TypeScript, données du classeur conservées dans un CSV, exploration par cartes et liste, fiches détaillées, filtres, carte Leaflet / OpenStreetMap, envies et visites, édition locale, import/export CSV et installation PWA. Hébergement statique configuré sur Cloudflare Workers, avec Pages en alternative.
+
+Les deux CSV enrichis fournis complètent désormais les 57 lieux avec leurs coordonnées et 56 URL de photos. Les sources, contrôles et incertitudes restent consultables ; les anciens carnets locaux sont mis à jour sans réinitialiser les modifications personnelles.
 
 Les données manquantes restent explicites. Les scores et les accès du backlog gardent leur provenance et leur saison. Une occurrence dans une feuille saisonnière n’est pas une observation datée des conditions de terrain.
 

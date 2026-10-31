@@ -3,8 +3,9 @@ import { ArrowUpRight, Check, Clock3, ExternalLink, Heart, MapPin, Mountain, Pen
 import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
 import { getSeasonProfile, isValidCoordinates, safeUrl } from '@/lib/csv'
+import { getEnrichment } from '@/lib/enrichment'
 import { formatHours, formatNumber } from '@/lib/utils'
-import type { Bivouac, BivouacChanges, Season, SeasonalProfile } from '@/types/bivouac'
+import type { Bivouac, BivouacChanges, Season, SeasonalProfile, SourceRecord } from '@/types/bivouac'
 
 interface BivouacDetailProps {
   bivouac: Bivouac
@@ -91,6 +92,14 @@ function SeasonalDetails({ profile }: { profile: SeasonalProfile | undefined }) 
   </>
 }
 
+function SourceDetails({ record, title, hideControlMetadata = false }: { record: SourceRecord; title?: string; hideControlMetadata?: boolean }) {
+  const fields = Object.entries(record.values).filter(([label]) => !hideControlMetadata || !['Sources et contrôles [données]', 'Sources et contrôles [source]', 'Sources et contrôles [ligne]'].includes(label))
+  return <details className="source-record">
+    <summary>{title || record.sheet || 'Import CSV'} · ligne {record.row}<span className="muted"> — {record.source}</span></summary>
+    <table className="source-table"><caption className="sr-only">Attributs originaux de {record.source}, ligne {record.row}</caption><tbody>{fields.map(([label, value]) => <tr key={label}><th scope="row">{label}</th><td className="whitespace-pre-wrap">{safeUrl(value) ? <a href={safeUrl(value) ?? undefined} target="_blank" rel="noopener noreferrer">{value} <ExternalLink size={12} /></a> : value || '—'}</td></tr>)}</tbody></table>
+  </details>
+}
+
 export function BivouacDetail({ bivouac, onClose, onUpdate, initialSeason }: BivouacDetailProps) {
   const [editing, setEditing] = useState(false)
   const [failedImage, setFailedImage] = useState<string | null>(null)
@@ -101,10 +110,14 @@ export function BivouacDetail({ bivouac, onClose, onUpdate, initialSeason }: Biv
   })
   const profile = bivouac.seasons[profileIndex]
   const image = safeUrl(bivouac.imageUrl)
+  const enrichment = getEnrichment(bivouac)
+  const changedCoordinates = enrichment.coordinates !== null && (bivouac.coordinates?.lat !== enrichment.coordinates.lat || bivouac.coordinates?.lng !== enrichment.coordinates.lng)
   const links: [string, string | null][] = [
     ['Fiche officielle', bivouac.links.official], ['Ouvrir Google Maps', bivouac.links.maps],
     ['Photos et galerie', bivouac.links.gallery], ['Source altitude / accès', bivouac.links.accessSource],
     ['Source de la cotation ski', bivouac.links.skiSource],
+    ['Source des coordonnées GPS', enrichment.gpsSource], ['Position du fichier source sur Google Maps', enrichment.gpsMapsUrl],
+    ['Source de la photo', enrichment.photoSource],
   ]
   function update(changes: BivouacChanges) {
     const saved = onUpdate(bivouac.id, changes)
@@ -138,14 +151,17 @@ export function BivouacDetail({ bivouac, onClose, onUpdate, initialSeason }: Biv
         <section className="detail-section"><h3>Mes notes</h3><p className="whitespace-pre-wrap">{bivouac.personalNotes || 'Pas encore de note personnelle.'}</p><Button variant="ghost" size="sm" onClick={() => setEditing(true)}><Pencil size={14} /> {bivouac.personalNotes ? 'Modifier mes notes' : 'Ajouter une note'}</Button></section>
         <section className="detail-section"><h3>Localisation et sources</h3>
           <p className="muted">{bivouac.coordinates ? `Coordonnées : ${bivouac.coordinates.lat}, ${bivouac.coordinates.lng}` : 'Coordonnées non renseignées : ce lieu n’a pas de marqueur sur la carte.'}</p>
+          {changedCoordinates && <p className="notice">Coordonnées modifiées localement. La fiabilité GPS déclarée concerne la position du fichier source.</p>}
+          {enrichment.gpsReliability && <p className="notice">Fiabilité GPS déclarée : {enrichment.gpsReliability}</p>}
+          {enrichment.gpsSource && !safeUrl(enrichment.gpsSource) && <p className="muted">Source GPS : {enrichment.gpsSource}</p>}
+          {enrichment.photoStatus && <p className="muted">Photo — statut dans le fichier source : {enrichment.photoStatus}</p>}
+          {enrichment.photoSource && !safeUrl(enrichment.photoSource) && <p className="muted">Source de la photo : {enrichment.photoSource}</p>}
           <div className="detail-links">{links.map(([label, value]) => { const href = safeUrl(value); return href ? <a key={label} href={href} target="_blank" rel="noopener noreferrer">{label}<ArrowUpRight size={16} /></a> : null })}</div>
           {!links.some(([, value]) => safeUrl(value)) && <p className="muted">Aucun lien source renseigné.</p>}
         </section>
         <section className="detail-section"><h3>Données originales</h3><p className="muted">Chaque ligne est conservée telle qu’importée, y compris les attributs supplémentaires.</p>
-          {bivouac.rawRecords.map((record, index) => <details className="source-record" key={`${record.source}-${record.sheet}-${record.row}-${index}`}>
-            <summary>{record.sheet || 'Import CSV'} · ligne {record.row}<span className="muted"> — {record.source}</span></summary>
-            <table className="source-table"><caption className="sr-only">Attributs originaux de {record.source}, ligne {record.row}</caption><tbody>{Object.entries(record.values).map(([label, value]) => <tr key={label}><th scope="row">{label}</th><td className="whitespace-pre-wrap">{safeUrl(value) ? <a href={safeUrl(value) ?? undefined} target="_blank" rel="noopener noreferrer">{value} <ExternalLink size={12} /></a> : value || '—'}</td></tr>)}</tbody></table>
-          </details>)}
+          {enrichment.control && <SourceDetails record={enrichment.control} title="Sources et contrôles" />}
+          {bivouac.rawRecords.map((record, index) => <SourceDetails record={record} hideControlMetadata={enrichment.control !== null} key={`${record.source}-${record.sheet}-${record.row}-${index}`} />)}
         </section>
       </>}
     </div>

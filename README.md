@@ -43,13 +43,15 @@ Playwright démarre automatiquement la prévisualisation sur le port 4173, ou r�
 
 ## Source des données
 
-Le fichier fourni dans ce dépôt est **`data/Bivacco Backlog.xlsx`**. Le CSV annoncé initialement était absent. Le classeur original est conservé intact ; un script reproductible extrait les données de ses quatre feuilles saisonnières dans `data/bivouacs.csv`.
+L'application utilise **`data/Bivacco_Explorer_enrichi.csv`** : **146 lignes saisonnières regroupées en 57 lieux**, avec **57 paires de coordonnées explicites et 56 URL de photos**. `data/Bivacco_Explorer_sources_et_controles.csv` apporte les sources et les contrôles de ces 57 lieux. Leur provenance et les réserves de fiabilité sont consultables dans les fiches ; la disponibilité des photos distantes n'est pas garantie.
+
+Le classeur historique **`data/Bivacco Backlog.xlsx`** et sa conversion `data/bivouacs.csv` sont conservés intacts. Pour reproduire uniquement cette conversion historique :
 
 ```sh
 python3 scripts/convert_workbook.py
 ```
 
-La même conversion est accessible via `npm run data:convert`. Le jeu initial contient **146 lignes saisonnières, regroupées en 57 lieux**, avec **deux paires de coordonnées explicites**. Le fichier `data/workbook-metadata.json` conserve les métadonnées de conversion du classeur.
+La même conversion est accessible via `npm run data:convert` ; elle ne remplace pas les deux CSV enrichis. Le fichier `data/workbook-metadata.json` conserve les métadonnées de conversion du classeur.
 
 Les occurrences saisonnières d’un même lieu sont regroupées à l’affichage. Les champs originaux, les liens, les estimations et les différences entre saisons restent conservés. Les notes importées sont celles du classeur, sans validation externe ni nouvelle évaluation. Les correspondances et les ambiguïtés sont détaillées dans [docs/DATA_MAPPING.md](docs/DATA_MAPPING.md).
 
@@ -60,6 +62,8 @@ Aucune coordonnée, cotation, condition ou photo de bivouac n’est inventée. U
 Les changements sont stockés dans `localStorage` sur cet appareil, pour l’origine exacte du site. Ils ne modifient pas le classeur et ne se synchronisent pas entre navigateurs ou appareils. Le mode privé, l’effacement des données du navigateur et un changement de domaine peuvent rendre ces données indisponibles.
 
 La persistance utilise une enveloppe versionnée et le même format CSV validé que les sauvegardes. Une sauvegarde locale illisible ou d’une version future bloque les écritures automatiques ; conserver le fichier de récupération proposé avant de demander explicitement sa réinitialisation.
+
+Les carnets enregistrés avant l'enrichissement sont actualisés au chargement : les valeurs inchangées reçoivent les nouvelles coordonnées et photos. Les corrections locales, envies, visites, notes et imports supplémentaires sont conservés, ainsi que leurs lignes source historiques. Aucune réinitialisation n'est nécessaire. La mise à jour n'écrit dans le stockage qu'à la prochaine modification enregistrée.
 
 Utiliser **Exporter CSV** régulièrement, notamment avant de vider les données du navigateur ou d’importer un autre fichier. Conserver cette sauvegarde hors du navigateur ; **Importer CSV** permet de la reprendre. L’export conserve les données sources ainsi que les modifications, notes et statuts personnels.
 
@@ -96,12 +100,14 @@ La procédure complète, les contrôles PWA et le parcours **Cloudflare Pages en
 
 - `src/types/bivouac.ts` : modèle métier TypeScript, provenance et distinction entre lieux et observations datées.
 - `src/lib/csv.ts` : import, normalisation, regroupement saisonnier et export sans perte des données sources.
+- `src/lib/enrichment.ts` : rapprochement des contrôles et lecture de la provenance GPS/photo.
+- `src/lib/seed-update.ts` : mise à jour du jeu initial sans écraser les différences personnelles.
 - `src/lib/repository.ts` : persistance locale versionnée, validation et récupération des sauvegardes.
 - `src/lib/filters.ts` : recherche, filtres et tri indépendants de la présentation.
 - `src/hooks/useBivouacs.ts` : lien entre les données métier, le dépôt et React.
 - `src/components/` : cartes, fiches, filtres, carte géographique, import/export et installation ; primitives shadcn/ui dans `ui/`.
 - `src/App.tsx` et `src/index.css` : navigation, assemblage des vues et identité visuelle responsive.
-- `data/` : classeur original et CSV extrait.
+- `data/` : classeur original, conversion historique, CSV enrichi et sources/contrôles.
 - `scripts/` : conversion reproductible indépendante du frontend.
 - `public/` : icônes, ressources statiques et en-têtes Cloudflare.
 - `wrangler.jsonc` : publication des ressources statiques sur Workers et repli SPA.
