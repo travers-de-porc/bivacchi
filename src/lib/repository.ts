@@ -34,17 +34,17 @@ export function createLocalRepository(storage: Pick<Storage, 'getItem' | 'setIte
         return { bivouacs: refreshed, error: null, recovery: null }
       } catch {
         blocked = true
-        return { bivouacs: seed, error: 'La sauvegarde locale ne peut pas être lue. Vos données sont conservées. Téléchargez une copie avant de réinitialiser.', recovery: raw }
+        return { bivouacs: seed, error: 'La sauvegarde locale est illisible. Vos données sont toujours là, mais on ne touche à rien : téléchargez-en une copie avant de réinitialiser.', recovery: raw }
       }
     },
     save(bivouacs) {
-      if (blocked) throw new Error('Sauvegarde protégée : récupérez vos données puis réinitialisez le stockage avant de modifier le carnet.')
+      if (blocked) throw new Error('Sauvegarde protégée : récupérez vos données puis réinitialisez le stockage avant de toucher au carnet. Mieux vaut prévenir que tout ressaisir.')
       const data: StoredData = {
         version: 1, csv: exportBivouacsCsv(bivouacs), savedAt: new Date().toISOString(),
         ...(seedUpdate ? { seedRevision: seedUpdate.revision } : {}),
       }
       try { storage.setItem(STORAGE_KEY, JSON.stringify(data)) }
-      catch { throw new Error('Enregistrement impossible : le stockage du navigateur est indisponible ou plein. Aucune modification n’a été enregistrée.') }
+      catch { throw new Error('Enregistrement impossible : le stockage du navigateur est indisponible ou plein, comme nos sacs. Aucune modification n’a été enregistrée.') }
     },
     reset() { storage.removeItem(STORAGE_KEY); blocked = false },
   }

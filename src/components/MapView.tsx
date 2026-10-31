@@ -46,7 +46,7 @@ function FrameMap({ positions }: { positions: LatLngTuple[] }) {
       type="button"
       className="map-recenter"
       aria-label="Recentrer la carte sur les bivouacs"
-      title="Recentrer la carte"
+      title="Recentrer la carte (encore perdus ?)"
       onPointerDown={(event) => event.stopPropagation()}
       onKeyDown={(event) => event.stopPropagation()}
       onClick={(event) => {
@@ -66,7 +66,7 @@ function FrameMap({ positions }: { positions: LatLngTuple[] }) {
 function GpsReliability({ bivouac }: { bivouac: LocatedBivouac }) {
   const enrichment = getEnrichment(bivouac)
   const changedCoordinates = enrichment.coordinates !== null && (bivouac.coordinates.lat !== enrichment.coordinates.lat || bivouac.coordinates.lng !== enrichment.coordinates.lng)
-  if (changedCoordinates) return <p>Coordonnées modifiées localement</p>
+  if (changedCoordinates) return <p>Coordonnées modifiées par vos soins</p>
   return enrichment.gpsReliability ? <p>Fiabilité GPS déclarée : {enrichment.gpsReliability}</p> : null
 }
 
@@ -95,7 +95,7 @@ export default function MapView({ bivouacs, onSelect }: MapViewProps) {
     <section className="map-view" aria-label="Carte des bivouacs">
       <div className="map-view-caption">
         <span><MapPin size={16} aria-hidden="true" /><strong>{located.length}</strong> sur {bivouacs.length} bivouacs sur la carte</span>
-        <span className="map-caption-detail">Coordonnées renseignées uniquement</span>
+        <span className="map-caption-detail">Seulement ceux qu’on sait vraiment placer</span>
       </div>
       <div className="map-canvas-wrap">
         <MapContainer
@@ -125,11 +125,11 @@ export default function MapView({ bivouacs, onSelect }: MapViewProps) {
             >
               <Popup minWidth={210} maxWidth={280}>
                 <div className="map-popup">
-                  <span className="map-popup-sector">{bivouac.sector || 'Secteur non renseigné'}</span>
+                  <span className="map-popup-sector">{bivouac.sector || 'Secteur : aucune idée'}</span>
                   <h3>{bivouac.name}</h3>
-                  <p><Mountain size={15} aria-hidden="true" />{bivouac.altitudeM === null ? 'Altitude non renseignée' : `${bivouac.altitudeM.toLocaleString('fr-FR')} m`}</p>
+                  <p><Mountain size={15} aria-hidden="true" />{bivouac.altitudeM === null ? 'Altitude : aucune idée' : `${bivouac.altitudeM.toLocaleString('fr-FR')} m`}</p>
                   <GpsReliability bivouac={bivouac} />
-                  <button type="button" onClick={() => onSelect(bivouac.id)}>Découvrir le bivouac <ArrowUpRight size={16} aria-hidden="true" /></button>
+                  <button type="button" onClick={() => onSelect(bivouac.id)}>Jeter un œil <ArrowUpRight size={16} aria-hidden="true" /></button>
                 </div>
               </Popup>
             </Marker>
@@ -138,15 +138,15 @@ export default function MapView({ bivouacs, onSelect }: MapViewProps) {
         {(!online || tileError) && (
           <div className="map-network-notice" role="status">
             <WifiOff size={17} aria-hidden="true" />
-            <span>{online ? 'Le fond de carte est momentanément indisponible.' : 'Hors connexion : le fond de carte nécessite Internet.'}</span>
+            <span>{online ? 'Le fond de carte boude. Réessayez dans un instant.' : 'Pas de réseau, pas de fond de carte. Les bivouacs, eux, restent là.'}</span>
             {online && <button type="button" aria-label="Réessayer le chargement de la carte" title="Réessayer" onClick={() => { setTileError(false); setTileAttempt((attempt) => attempt + 1) }}><RefreshCw size={16} aria-hidden="true" /></button>}
           </div>
         )}
         {located.length === 0 && (
           <div className="map-empty-note">
             <span className="map-empty-icon"><MapPin size={24} aria-hidden="true" /></span>
-            <h3>Aucun bivouac localisé dans cette sélection</h3>
-            <p>Les lieux apparaîtront ici dès que leurs coordonnées seront renseignées dans leur fiche.</p>
+            <h3>Rien à placer sur la carte</h3>
+            <p>Aucun lieu de cette sélection n’a de coordonnées, et on ne place rien au hasard. Ajoutez une position vérifiée dans une fiche pour la voir apparaître ici.</p>
             {firstMissing && <button type="button" onClick={() => onSelect(firstMissing.id)}>Compléter une fiche <ArrowUpRight size={16} aria-hidden="true" /></button>}
           </div>
         )}
@@ -154,7 +154,7 @@ export default function MapView({ bivouacs, onSelect }: MapViewProps) {
       {missing > 0 && (
         <div className="map-missing-note">
           <MapPin size={17} aria-hidden="true" />
-          <p><strong>{missing} {missing === 1 ? 'bivouac sans coordonnées' : 'bivouacs sans coordonnées'}.</strong> Retrouvez-les dans la liste. Vous pouvez ajouter une position vérifiée depuis leur fiche.</p>
+          <p><strong>{missing} {missing === 1 ? 'bivouac sans coordonnées' : 'bivouacs sans coordonnées'}.</strong> Pas perdus, juste pas placés : ils sont dans la liste. Une position vérifiée, ajoutée depuis leur fiche, les fera apparaître ici.</p>
         </div>
       )}
     </section>

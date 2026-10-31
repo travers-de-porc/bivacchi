@@ -9,7 +9,7 @@ export const pwaOptions: Partial<VitePWAOptions> = {
     id: '/',
     name: 'Bivacco Explorer',
     short_name: 'Bivacco',
-    description: 'Votre carnet de bivouacs alpins : explorer, choisir et préparer la prochaine échappée.',
+    description: 'Carnet de bivouacs alpins pour marcheurs lents, sacs trop lourds et apéros en altitude.',
     lang: 'fr',
     start_url: '/',
     scope: '/',

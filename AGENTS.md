@@ -47,6 +47,14 @@ Prefer simple, widely adopted libraries and minimal dependencies.
 - Avoid generic enterprise dashboard styling.
 - Ensure the application remains usable on desktop.
 
+## Voice and tone
+
+- French copy with dry, self-deprecating, tongue-in-cheek humour in the spirit of Top Gear / Jeremy Clarkson. Never generic, corporate or poetic-inspirational.
+- The crew are amateurs: slow, not very efficient, often doing things backwards or sideways, but they always get there in the end. They carry far too much so they can eat and drink well at the top, and arrive later and more tired for it.
+- Keep the humour in headings, descriptions, empty states, help text and errors. Buttons, form labels and accessibility names stay short and unambiguous; errors still say what went wrong and what to do.
+- Jokes never invent facts or blur provenance: no made-up conditions, ratings, coordinates or reviews. Keep the existing disclaimers (imported ratings are not current reviews, seasonal access is not a live report, missing data is shown explicitly).
+- Vary the running gags (slowness, getting lost, heavy packs, food and drink) instead of repeating the same joke on every screen.
+
 ## Development workflow
 
 - Inspect existing code before making changes.

@@ -1,6 +1,8 @@
 # Bivacco Explorer
 
-Un carnet personnel de bivouacs alpins, en français, conçu pour préparer la prochaine sortie depuis un téléphone ou un ordinateur. Cette première version fonctionne sans compte et sans backend : les modifications restent dans le navigateur utilisé.
+Le carnet de bivouacs alpins d’une équipe ni rapide, ni experte, ni franchement organisée. On part en retard, on prend le sentier à l’envers au moins une fois, et le sac pèse le poids d’un petit réfrigérateur parce qu’il est hors de question de mal manger là-haut. Mais on arrive toujours. Tard, rincés, et avec du fromage.
+
+L’application sert à choisir le prochain bivouac depuis un téléphone ou un ordinateur. Cette première version tourne sans compte et sans backend : les modifications restent dans le navigateur utilisé. C’est simple. Presque suspect, venant de nous.
 
 ## Démarrer
 
@@ -32,14 +34,14 @@ npm run test:e2e
 
 Playwright démarre automatiquement la prévisualisation sur le port 4173, ou réutilise celle qui fonctionne déjà. Les photos externes sont remplacées par une illustration neutre lorsqu’elles ne peuvent pas être chargées.
 
-## Fonctionnalités
+## Ce que ça fait
 
-- Exploration par cartes, liste recherchable et carte Leaflet / OpenStreetMap.
-- Fiches détaillées avec accès saisonniers, notes, évaluations et sources du backlog.
-- Recherche et filtres fondés sur les attributs réellement présents dans les données.
-- Liste d’envies, statut visité et modifications personnelles conservés localement.
-- Import et export CSV pour déplacer et sauvegarder les données.
-- Interface responsive en français, manifeste et service worker pour installation mobile.
+- Trois façons de choisir : des cartes, une liste qu’on peut fouiller et une carte Leaflet / OpenStreetMap. Oui, ça fait beaucoup de cartes.
+- Des fiches détaillées : accès selon la saison, notes, évaluations et sources du backlog.
+- Une recherche et des filtres fondés sur ce qui existe vraiment dans les données, pas sur ce qu’on aimerait y trouver.
+- Envies, bivouacs faits et corrections personnelles, gardés dans le navigateur.
+- Import et export CSV, pour déménager le carnet ou le sauvegarder avant la catastrophe.
+- Interface en français, sur téléphone comme sur ordinateur, installable et utilisable hors connexion.
 
 ## Source des données
 
@@ -55,7 +57,7 @@ La même conversion est accessible via `npm run data:convert` ; elle ne remplace
 
 Les occurrences saisonnières d’un même lieu sont regroupées à l’affichage. Les champs originaux, les liens, les estimations et les différences entre saisons restent conservés. Les notes importées sont celles du classeur, sans validation externe ni nouvelle évaluation. Les correspondances et les ambiguïtés sont détaillées dans [docs/DATA_MAPPING.md](docs/DATA_MAPPING.md).
 
-Aucune coordonnée, cotation, condition ou photo de bivouac n’est inventée. Un lieu sans coordonnées valides reste consultable dans les cartes et listes ; il ne reçoit pas de marqueur géographique. Un lien de recherche Google Maps ne constitue pas une coordonnée.
+Amateurs, oui ; menteurs, non. Aucune coordonnée, cotation, condition ou photo de bivouac n’est inventée. Un lieu sans coordonnées valides reste consultable dans les cartes et listes ; il ne reçoit pas de marqueur géographique. Un lien de recherche Google Maps ne constitue pas une coordonnée.
 
 ## Sauvegardes et changements locaux
 
@@ -65,9 +67,11 @@ La persistance utilise une enveloppe versionnée et le même format CSV validé 
 
 Les carnets enregistrés avant l'enrichissement sont actualisés au chargement : les valeurs inchangées reçoivent les nouvelles coordonnées et photos. Les corrections locales, envies, visites, notes et imports supplémentaires sont conservés, ainsi que leurs lignes source historiques. Aucune réinitialisation n'est nécessaire. La mise à jour n'écrit dans le stockage qu'à la prochaine modification enregistrée.
 
-Utiliser **Exporter CSV** régulièrement, notamment avant de vider les données du navigateur ou d’importer un autre fichier. Conserver cette sauvegarde hors du navigateur ; **Importer CSV** permet de la reprendre. L’export conserve les données sources ainsi que les modifications, notes et statuts personnels.
+Exporter régulièrement via **Mes données → Exporter en CSV**, notamment avant de vider les données du navigateur ou d’importer un autre fichier. Oui, régulièrement : tout le monde connaît quelqu’un qui a perdu son carnet. Conserver cette sauvegarde hors du navigateur ; **Choisir un fichier CSV**, dans la même fenêtre, permet de la reprendre. L’export conserve les données sources ainsi que les modifications, notes et statuts personnels.
 
 ## Installer et utiliser hors connexion
+
+Utile au fond d’un vallon sans réseau, c’est-à-dire là où l’on finit généralement par se demander où on est.
 
 La PWA est activée dans le build de production, désactivée avec `npm run dev`. Tester avec `npm run build` puis `npm run preview` sur `localhost`, ou servir `dist/` en HTTPS.
 
@@ -113,4 +117,4 @@ La procédure complète, les contrôles PWA et le parcours **Cloudflare Pages en
 - `wrangler.jsonc` : publication des ressources statiques sur Workers et repli SPA.
 - `pwa.config.ts` : manifeste et politique de cache de l’application.
 
-Les conventions de contribution sont dans [AGENTS.md](AGENTS.md). Les prochaines étapes sont dans [ROADMAP.md](ROADMAP.md). Supabase, la collaboration et les agents d’ingestion ne font pas partie de cette version.
+Les conventions de contribution sont dans [AGENTS.md](AGENTS.md). Les prochaines étapes sont dans [ROADMAP.md](ROADMAP.md). Supabase, la collaboration et les agents d’ingestion ne font pas partie de cette version. Chaque chose en son temps, et le nôtre est lent.

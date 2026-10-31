@@ -99,7 +99,7 @@ function coordinates(row: Record<string, string>, rowNumber: number): Coordinate
 function profile(row: Record<string, string>, warnings: Set<string>): SeasonalProfile {
   const seasonValue = valueOf(row, 'Feuille', 'Saison', 'season')
   const season = SEASONS.find((item) => normalize(item) === normalize(seasonValue)) ?? null
-  if (seasonValue && !season) warnings.add(`Saison « ${seasonValue} » non reconnue : conservée dans les données originales.`)
+  if (seasonValue && !season) warnings.add(`Saison « ${seasonValue} » inconnue au bataillon : conservée telle quelle dans les données originales.`)
   const score = (header: string) => {
     const result = numeric(row[header])
     if (row[header]?.trim() && (result === null || result < 0 || result > 5)) {
@@ -215,7 +215,7 @@ function parseChanges(value: string, rowNumber: number): BivouacChanges {
 /** Parse atomically: malformed CSV or invalid identities/coordinates never partially import. */
 export function parseBivouacsCsv(text: string, sourceName = 'Import CSV'): CsvImportResult {
   if (text.length > MAX_LENGTH) throw new Error('Le fichier CSV dépasse la limite de 20 Mo.')
-  if (!text.trim()) throw new Error('Le fichier CSV est vide.')
+  if (!text.trim()) throw new Error('Le fichier CSV est vide. Comme la gourde au bout de deux heures.')
   const parsed = Papa.parse<Record<string, string>>(text.replace(/^\uFEFF/, ''), {
     header: true,
     skipEmptyLines: 'greedy',
@@ -233,10 +233,10 @@ export function parseBivouacsCsv(text: string, sourceName = 'Import CSV'): CsvIm
     }
     throw new Error(`CSV invalide : ${reasons[errors[0].code] ?? 'la structure du fichier est incorrecte'} (ligne ${(errors[0].row ?? 0) + 2}).`)
   }
-  if (parsed.meta.renamedHeaders && Object.keys(parsed.meta.renamedHeaders).length) throw new Error('Le CSV contient plusieurs colonnes portant le même nom.')
+  if (parsed.meta.renamedHeaders && Object.keys(parsed.meta.renamedHeaders).length) throw new Error('Le CSV contient plusieurs colonnes portant le même nom. Une seule par nom, sinon on s’emmêle les crampons.')
   const headers = parsed.meta.fields ?? []
-  if (!['Cabane / lieu', 'Nom', 'name'].some((header) => headers.includes(header))) throw new Error('Colonne obligatoire manquante : « Cabane / lieu » (ou « Nom »).')
-  if (!parsed.data.length) throw new Error('Le CSV ne contient aucun bivouac.')
+  if (!['Cabane / lieu', 'Nom', 'name'].some((header) => headers.includes(header))) throw new Error('Colonne obligatoire manquante : « Cabane / lieu » (ou « Nom »). Sans elle, on ne sait pas de quoi on parle.')
+  if (!parsed.data.length) throw new Error('Le CSV ne contient aucun bivouac. Juste des en-têtes et beaucoup d’espoir.')
   if (parsed.data.length > MAX_ROWS) throw new Error(`Le CSV dépasse la limite de ${MAX_ROWS.toLocaleString('fr')} lignes.`)
   const warnings = new Set<string>()
   const places = new Map<string, Bivouac>()
@@ -244,7 +244,7 @@ export function parseBivouacsCsv(text: string, sourceName = 'Import CSV'): CsvIm
   const modifications = new Map<string, string>()
   parsed.data.forEach((csvRow, index) => {
     const rowNumber = index + 2
-    if (csvRow.__bivacco_version && csvRow.__bivacco_version !== EXPORT_VERSION) throw new Error(`Version d'export ${csvRow.__bivacco_version} non prise en charge. Aucune donnée n'a été importée.`)
+    if (csvRow.__bivacco_version && csvRow.__bivacco_version !== EXPORT_VERSION) throw new Error(`Version d’export ${csvRow.__bivacco_version} non prise en charge (elle vient du futur ?). Aucune donnée n’a été importée.`)
     if (RESERVED.some((key) => headers.includes(key)) && RESERVED.some((key) => !csvRow[key]?.trim())) {
       throw new Error(`Ligne ${rowNumber} : colonnes de sauvegarde incomplètes. Les quatre colonnes __bivacco_* sont nécessaires.`)
     }
