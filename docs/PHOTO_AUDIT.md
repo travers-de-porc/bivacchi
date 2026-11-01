@@ -22,9 +22,9 @@ Le nombre de six échecs observés dans le navigateur n'a pas été reproduit à
 
 Les URL originales, les résultats HTTP et leurs dates restent dans `data/photos.json`. Les CSV fournis sont inchangés. Aucune autorisation de réutilisation n'est déduite d'une URL ; les crédits connus et les sources sont conservés.
 
-## Galerie de la carte
+## Galerie photo
 
-Sur la carte, la popup d'un lieu ouvre un petit carrousel : la photo principale ci-dessus, puis jusqu'à trois photos supplémentaires, dont l'intérieur lorsqu'une photo fiable existe. Ces photos ont leur propre catalogue, `data/photo-gallery.json`, chargé seulement avec la carte ; `data/photos.json` et ses 57 entrées n'ont pas changé.
+Un petit carrousel montre la photo principale ci-dessus, puis jusqu'à trois photos supplémentaires, dont l'intérieur lorsqu'une photo fiable existe. Il apparaît dans la popup de la carte (vue par défaut), sur chaque carte de la mosaïque et en tête de la fiche d'un lieu. Ces photos ont leur propre catalogue, `data/photo-gallery.json` ; `data/photos.json` et ses 57 entrées n'ont pas changé.
 
 - **134 photos pour 52 lieux** : 51 intérieurs, 71 extérieurs et 12 vues des alentours, soit 11 321 010 octets (environ 11,32 Mo).
 - Sources ouvertes et attribuables uniquement : camptocamp.org (images collaboratives CC BY-SA 3.0, personnelles CC BY-NC-ND 3.0), refuges.info (CC BY-SA 2.0 FR) et Wikimedia Commons (licence propre à chaque fichier). Répartition : 60 photos refuges.info, 52 camptocamp (39 collaboratives, 13 personnelles) et 22 Commons (8 CC BY-SA 4.0, 6 CC BY-SA 3.0, 2 CC BY-SA 2.5, 1 CC BY-SA 2.0 FR, 2 CC BY 3.0, 1 CC BY 4.0, 2 CC0).
@@ -34,13 +34,14 @@ Sur la carte, la popup d'un lieu ouvre un petit carrousel : la photo principale 
 - `takenOn` est une date de prise de vue fournie par la source. `publishedOn` est la date du commentaire refuges.info : la photo peut être plus ancienne. La popup affiche l'année disponible. Une photo montre l'état du jour où elle a été prise, pas l'état actuel.
 - Trois commentaires refuges.info anonymes restent sans auteur : aucun nom n'est inventé. Le crédit Commons « The original uploader was Orobicon at Italian Wikipedia » est abrégé en « Orobicon (Wikipédia en italien) ».
 - Cinq lieux n'ont pas de galerie : Capanna Luigina Resegotti (seule photo trouvée centrée sur une personne), rifugio Vittorio Raffaele Leonesi (seulement une carte), Bivouac Fanton, Bivacco Beltrando et Bivacco Camposecco (aucune photo trouvée). Leur photo principale s'affiche seule.
+- La popup et la fiche affichent sous chaque photo son auteur, sa licence, l'année connue et un lien vers la source. Dans la mosaïque, où la place manque, ce crédit est l'info-bulle de la photo, et il est complet dès qu'on ouvre la popup ou la fiche.
 - La galerie n'apparaît que si la photo principale est la photo cataloguée du lieu. Un import personnel avec une autre photo garde la sienne, sans galerie.
 - Les images personnelles camptocamp (CC BY-NC-ND) sont utilisées sans modification dans ce carnet non commercial. Un usage commercial du site imposerait de les retirer ou d'obtenir l'accord des auteurs.
 
 ## Intégration et maintenance
 
 - `data/photos.json` relie l'identifiant du lieu, l'URL d'origine, l'URL téléchargée, la page source et le chemin local. Il contient aussi dimensions, taille, SHA-256, date et crédit connu. `data/photo-gallery.json` contient les mêmes informations de fichier pour la galerie, avec la vue, l'auteur, la licence et les dates.
-- `src/lib/gallery.ts` assemble le carrousel ; seul le chunk de la carte l'importe, ce qui laisse le bundle principal à sa taille.
+- `src/lib/gallery.ts` assemble les photos du carrousel et `src/components/PhotoCarousel.tsx` les affiche. Depuis que la mosaïque et les fiches l'utilisent aussi, le catalogue de galerie est inclus dans le bundle principal (environ 20 Ko compressés).
 - Les noms sous `public/images/bivouacs/` contiennent les 12 premiers caractères du SHA-256 ; Cloudflare peut les servir avec un cache immutable. Une autre image reçoit un autre nom.
 - `src/lib/photos.ts` résout la photo pour l'affichage sans changer `Bivouac.imageUrl`, les données originales ou les sauvegardes. Les carnets existants bénéficient donc des photos locales sans réinitialisation. Une photo importée avec une autre URL garde sa propre source.
 - Vite copie les fichiers dans `dist/images/bivouacs/`. Le build n'effectue aucun téléchargement réseau et aucune variable d'environnement n'est nécessaire.

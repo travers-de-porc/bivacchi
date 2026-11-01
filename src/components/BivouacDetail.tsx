@@ -2,9 +2,11 @@ import { useId, useState, type FormEvent } from 'react'
 import { ArrowUpRight, Check, Clock3, ExternalLink, Heart, MapPin, Mountain, Pencil, Save, Tent, TrendingUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
+import { PhotoCarousel } from '@/components/PhotoCarousel'
 import { getSeasonProfile, isValidCoordinates, safeUrl } from '@/lib/csv'
 import { getEnrichment } from '@/lib/enrichment'
-import { getLocalPhoto, getPhotoUrl } from '@/lib/photos'
+import { getDisplayPhotos } from '@/lib/gallery'
+import { getLocalPhoto } from '@/lib/photos'
 import { formatHours, formatNumber } from '@/lib/utils'
 import type { Bivouac, BivouacChanges, Season, SeasonalProfile, SourceRecord } from '@/types/bivouac'
 
@@ -115,14 +117,12 @@ function SourceDetails({ record, title, hideControlMetadata = false }: { record:
 
 export function BivouacDetail({ bivouac, onClose, onUpdate, initialSeason }: BivouacDetailProps) {
   const [editing, setEditing] = useState(false)
-  const [failedImage, setFailedImage] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [profileIndex, setProfileIndex] = useState(() => {
     const initial = getSeasonProfile(bivouac, initialSeason)
     return initial ? bivouac.seasons.indexOf(initial) : 0
   })
   const profile = bivouac.seasons[profileIndex]
-  const image = getPhotoUrl(bivouac)
   const localPhoto = getLocalPhoto(bivouac)
   const enrichment = getEnrichment(bivouac)
   const changedCoordinates = enrichment.coordinates !== null && (bivouac.coordinates?.lat !== enrichment.coordinates.lat || bivouac.coordinates?.lng !== enrichment.coordinates.lng)
@@ -141,8 +141,10 @@ export function BivouacDetail({ bivouac, onClose, onUpdate, initialSeason }: Biv
   }
   return <Dialog open onOpenChange={(open) => { if (!open) onClose() }} title={bivouac.name} description={bivouac.sector || 'Secteur : aucune idée'} className="detail-dialog">
     <div className="detail-hero">
-      {image && failedImage !== image ? <img className="detail-cover" src={image} alt={bivouac.name} referrerPolicy="no-referrer" onError={() => setFailedImage(image)} /> : <div className="detail-placeholder"><Mountain size={64} strokeWidth={1} /><span>Il faudra monter voir.</span><small>Photo aux abonnés absents</small></div>}
-      <span className="tag"><Mountain size={14} /> {formatNumber(bivouac.altitudeM, ' m')}</span>
+      <PhotoCarousel variant="detail" photos={getDisplayPhotos(bivouac)} name={bivouac.name}
+        placeholder={<div className="detail-placeholder"><Mountain size={64} strokeWidth={1} /><span>Il faudra monter voir.</span><small>Photo aux abonnés absents</small></div>}>
+        <span className="tag"><Mountain size={14} /> {formatNumber(bivouac.altitudeM, ' m')}</span>
+      </PhotoCarousel>
     </div>
     <div className="detail-body">
       <div className="detail-actions">

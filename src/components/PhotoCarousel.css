@@ -1,0 +1,42 @@
+.photo-carousel { position: relative; }
+.photo-carousel-frame { position: relative; background: #e7e9df; }
+.photo-carousel-track { display: flex; overflow-x: auto; aspect-ratio: 3 / 2; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none; }
+.photo-carousel-track::-webkit-scrollbar { display: none; }
+.photo-carousel-slide { position: relative; flex: 0 0 100%; margin: 0; overflow: hidden; scroll-snap-align: start; scroll-snap-stop: always; }
+.photo-carousel-slide img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.photo-carousel-open { display: block; width: 100%; height: 100%; padding: 0; border: 0; background: none; cursor: pointer; }
+.photo-carousel-open:focus-visible { outline: 3px solid #cc653c; outline-offset: -3px; }
+.photo-carousel-missing { display: grid; place-content: center; justify-items: center; gap: 6px; height: 100%; color: #718076; font-size: 12px; }
+.photo-carousel.is-popup.is-empty .photo-carousel-frame { aspect-ratio: 3 / 2; }
+.photo-carousel-meta { position: absolute; right: 10px; bottom: 10px; display: flex; gap: 6px; pointer-events: none; }
+.photo-carousel-view { padding: 3px 8px; border-radius: 999px; color: #fff; background: #173e34d9; font-size: 11px; font-weight: 600; }
+.photo-carousel-count { padding: 3px 8px; border-radius: 999px; color: #173e34; background: #fffefbe6; font-size: 11px; font-variant-numeric: tabular-nums; }
+.photo-carousel-button { position: absolute; top: 50%; display: grid; place-items: center; width: 32px; height: 32px; padding: 0; transform: translateY(-50%); border: 0; border-radius: 50%; color: #173e34; background: #fffefbe6; box-shadow: 0 1px 6px #173e3430; cursor: pointer; }
+.photo-carousel-button.is-previous { left: 8px; }
+.photo-carousel-button.is-next { right: 8px; }
+.photo-carousel-button:hover { background: #fffefb; }
+.photo-carousel-button:disabled { opacity: 0; pointer-events: none; }
+.photo-carousel-button:focus-visible { outline: 3px solid #cc653c; outline-offset: 2px; }
+.photo-carousel-credit { margin: 0; color: #718076; font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; }
+.photo-carousel-credit a { display: inline-flex; align-items: center; gap: 2px; color: #3e5548; }
+.photo-carousel-credit a:focus-visible { outline: 2px solid #cc653c; outline-offset: 1px; border-radius: 2px; }
+
+/* Mosaic: the card sets the size; arrows show on hover or keyboard focus, swipe does the rest on touch. */
+.photo-carousel.is-card, .is-card .photo-carousel-frame, .is-card .photo-carousel-track { height: 100%; }
+.is-card .photo-carousel-track { aspect-ratio: auto; }
+.is-card .photo-carousel-meta { right: 12px; bottom: 12px; }
+.is-card .photo-carousel-button { opacity: 0; transition: opacity .15s; }
+.is-card:hover .photo-carousel-button:not(:disabled), .is-card:focus-within .photo-carousel-button:not(:disabled) { opacity: 1; }
+@media (hover: none) {
+  .is-card .photo-carousel-button { display: none; }
+}
+
+/* Details dialog: same heights as the former single cover. */
+.is-detail .photo-carousel-track { aspect-ratio: auto; height: 290px; }
+.is-detail .photo-carousel-slide .detail-placeholder { height: 100%; }
+.is-detail .photo-carousel-meta { right: 16px; bottom: 16px; }
+.is-detail .photo-carousel-credit { padding: 8px 28px 0; }
+@media (max-width: 560px) {
+  .is-detail .photo-carousel-track { height: 210px; }
+  .is-detail .photo-carousel-credit { padding-inline: 20px; }
+}

@@ -1,8 +1,10 @@
 import { expect, test, type Page } from '@playwright/test'
+import { readFileSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { exportBivouacsCsv, parseBivouacsCsv } from '../../src/lib/csv'
 
 const runtimeErrors = new WeakMap<Page, string[]>()
+const galleryCount: number = JSON.parse(readFileSync(new URL('../../data/photo-gallery.json', import.meta.url), 'utf8')).photos.length
 
 // Bundled photos must work without their original hosts. Map tiles and any
 // photographs from future custom imports remain external network requests.
@@ -12,12 +14,20 @@ test.beforeEach(async ({ page }) => {
   page.on('pageerror', error => errors.push(error.message))
   await page.route('**/*', route => new URL(route.request().url()).origin === 'http://127.0.0.1:4173' ? route.continue() : route.abort())
   await page.goto('/', { waitUntil: 'domcontentloaded' })
-  await expect(page.locator('.bivouac-card')).toHaveCount(57)
+  // The map is the default view; most scenarios then work from the mosaic.
+  await expect(page.getByRole('button', { name: 'Carte géographique', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.locator('.leaflet-marker-icon')).toHaveCount(57)
+  await showCards(page)
 })
 
 test.afterEach(async ({ page }) => {
   expect(runtimeErrors.get(page)).toEqual([])
 })
+
+async function showCards(page: Page, count = 57) {
+  await page.getByRole('button', { name: 'Cartes', exact: true }).click()
+  await expect(page.locator('.bivouac-card')).toHaveCount(count)
+}
 
 async function openArben(page: Page) {
   await page.getByRole('textbox', { name: 'Rechercher un bivouac' }).fill('Arbenbiwak')
@@ -30,8 +40,9 @@ async function importFixture(page: Page, content: string, filename = 'fixture.cs
 }
 
 async function expectAllLocalPhotos(page: Page) {
-  const images = page.locator('.bivouac-card .bivouac-image img')
-  await expect(images).toHaveCount(57)
+  // Covers and gallery photos alike: every slide of every mosaic carousel.
+  const images = page.locator('.bivouac-card .photo-carousel img')
+  await expect(images).toHaveCount(57 + galleryCount)
   const results = await images.evaluateAll(async elements => Promise.all(elements.map(async element => {
     const image = element as HTMLImageElement
     image.loading = 'eager'
@@ -48,12 +59,12 @@ async function expectAllLocalPhotos(page: Page) {
   await expect(page.locator('.bivouac-card .image-placeholder')).toHaveCount(0)
 }
 
-test('all 57 photographs decode locally, including the supplied Resegotti image, with external hosts blocked', async ({ page }) => {
+test('every cover and gallery photograph decodes locally, including the supplied Resegotti image, with external hosts blocked', async ({ page }) => {
   await expectAllLocalPhotos(page)
   await page.getByRole('textbox', { name: 'Rechercher un bivouac' }).fill('Resegotti')
   await page.getByRole('link', { name: 'Capanna Luigina Resegotti', exact: true }).click()
   const dialog = page.getByRole('dialog')
-  const image = dialog.locator('.detail-cover')
+  const image = dialog.getByRole('region', { name: 'Photos de Capanna Luigina Resegotti' }).locator('img').first()
   await expect(image).toHaveAttribute('src', /^\/images\/bivouacs\//)
   expect(await image.evaluate(async element => {
     const photo = element as HTMLImageElement
@@ -162,6 +173,31 @@ test('map popup shows a local photo carousel with interior views and credits', a
   await expect(page.getByRole('dialog')).toBeVisible()
 })
 
+test('mosaic cards and details opened from the mosaic or the list show the photo carousel', async ({ page }) => {
+  await page.getByRole('textbox', { name: 'Rechercher un bivouac' }).fill('Bivouac du Dolent')
+  const card = page.locator('.bivouac-card')
+  await expect(card).toHaveCount(1)
+  const cardCarousel = card.getByRole('region', { name: 'Photos de Bivouac du Dolent CAS' })
+  await expect(cardCarousel.getByText('1 / 4', { exact: true })).toBeVisible()
+  await card.hover()
+  await cardCarousel.getByRole('button', { name: 'Photo suivante' }).click()
+  await expect(cardCarousel.getByText('2 / 4', { exact: true })).toBeVisible()
+  await expect(cardCarousel.locator('.photo-carousel-view')).toHaveText('Intérieur')
+  await expect(cardCarousel.locator('img').nth(1)).toHaveAttribute('title', /^Photo : .+ · CC BY/)
+  // The photo itself still opens the details, as the single mosaic image did.
+  await cardCarousel.locator('figure:not([inert]) .photo-carousel-open').click()
+  const details = page.getByRole('dialog').getByRole('region', { name: 'Photos de Bivouac du Dolent CAS' })
+  await expect(details.getByText('1 / 4', { exact: true })).toBeVisible()
+  await expect(details.locator('.photo-carousel-credit')).toContainText('Photo')
+  await details.getByRole('button', { name: 'Photo suivante' }).click()
+  await expect(details.getByText('2 / 4', { exact: true })).toBeVisible()
+  await expect(details.locator('.photo-carousel-credit a[rel~="license"]')).toHaveAttribute('href', /^https:\/\/creativecommons\.org\//)
+  await page.getByRole('button', { name: 'Fermer', exact: true }).click()
+  await page.getByRole('button', { name: 'Liste', exact: true }).click()
+  await page.locator('.table-name').click()
+  await expect(page.getByRole('dialog').getByRole('region', { name: 'Photos de Bivouac du Dolent CAS' }).locator('img')).toHaveCount(4)
+})
+
 test('enriched GPS reliability and source controls remain visible in the details', async ({ page }) => {
   for (const [name, reliability] of [
     ['Bivacco Carpano', 'à vérifier : sources discordantes'],
@@ -195,7 +231,7 @@ test('a previous local notebook receives enrichment without losing edits or impo
   const backup = JSON.stringify({ version: 1, csv: exportBivouacsCsv(legacy), savedAt: '2026-10-01T00:00:00.000Z' })
   await page.evaluate(value => localStorage.setItem('bivacco-explorer:v1', value), backup)
   await page.reload({ waitUntil: 'domcontentloaded' })
-  await expect(page.locator('.bivouac-card')).toHaveCount(58)
+  await showCards(page, 58)
   await expect(page.getByRole('alert')).toHaveCount(0)
   await expect(page.getByRole('link', { name: 'Abri ajouté avant enrichissement', exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Carte géographique', exact: true }).click()
@@ -237,7 +273,7 @@ test('CSV import is previewed, malformed input is rejected, and the download res
   await expect(page.locator('.bivouac-card')).toHaveCount(58)
   await page.evaluate(() => localStorage.clear())
   await page.reload({ waitUntil: 'domcontentloaded' })
-  await expect(page.locator('.bivouac-card')).toHaveCount(57)
+  await showCards(page)
   await page.getByRole('button', { name: 'Mes données', exact: true }).click()
   await importFixture(page, backup, 'sauvegarde.csv')
   await expect(page.locator('.import-preview')).toContainText('restaure aussi vos envies')
@@ -278,13 +314,13 @@ test('production service worker makes all local photographs and saved wishes ava
   await context.setOffline(true)
   await page.reload({ waitUntil: 'domcontentloaded' })
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
-  await expect(page.locator('.bivouac-card')).toHaveCount(57)
+  await showCards(page)
   // Most photos have never been displayed in this test: they must come from
   // the service worker's precache, not from requests made while scrolling online.
   await expectAllLocalPhotos(page)
   await page.getByRole('textbox', { name: 'Rechercher un bivouac' }).fill('Resegotti')
   await page.getByRole('link', { name: 'Capanna Luigina Resegotti', exact: true }).click()
-  const offlinePhoto = page.getByRole('dialog').locator('.detail-cover')
+  const offlinePhoto = page.getByRole('dialog').getByRole('region', { name: 'Photos de Capanna Luigina Resegotti' }).locator('img').first()
   expect(await offlinePhoto.evaluate(async element => {
     const image = element as HTMLImageElement
     await image.decode()

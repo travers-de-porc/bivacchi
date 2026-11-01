@@ -17,7 +17,7 @@ const readHash = () => window.location.hash
 export default function App() {
   const { bivouacs, update, importData, storageError, recovery, reset } = useBivouacs()
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
-  const [view, setView] = useState<'cards' | 'list' | 'map'>('cards')
+  const [view, setView] = useState<'cards' | 'list' | 'map'>('map')
   const [dataOpen, setDataOpen] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [resetOpen, setResetOpen] = useState(false)

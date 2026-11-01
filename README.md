@@ -32,11 +32,12 @@ npm run build
 npm run test:e2e
 ```
 
-Playwright démarre automatiquement la prévisualisation sur le port 4173, ou réutilise celle qui fonctionne déjà. Les tests vérifient notamment le chargement des 57 photos locales, y compris sans connexion, et le carrousel photo de la carte. Une photo indisponible dans un import personnel conserve le remplacement visuel prévu.
+Playwright démarre automatiquement la prévisualisation sur le port 4173, ou réutilise celle qui fonctionne déjà. Les tests vérifient notamment que la carte s’ouvre par défaut, le chargement des 191 photos locales (couvertures et galerie), y compris sans connexion, et le carrousel photo de la carte, de la mosaïque et des fiches. Une photo indisponible dans un import personnel conserve le remplacement visuel prévu.
 
 ## Ce que ça fait
 
-- Trois façons de choisir : des cartes, une liste qu’on peut fouiller et une carte Leaflet / OpenStreetMap. Oui, ça fait beaucoup de cartes.
+- Trois façons de choisir : une carte Leaflet / OpenStreetMap (celle qui s’ouvre en premier, parce qu’on commence toujours par se demander où c’est), des cartes en mosaïque et une liste qu’on peut fouiller. Oui, ça fait beaucoup de cartes.
+- Des photos qu’on fait défiler, intérieur compris quand on en a trouvé : dans la popup de la carte, sur chaque carte de la mosaïque et en tête de fiche.
 - Des fiches détaillées : accès selon la saison, notes, évaluations et sources du backlog.
 - Une recherche et des filtres fondés sur ce qui existe vraiment dans les données, pas sur ce qu’on aimerait y trouver.
 - Envies, bivouacs faits et corrections personnelles, gardés dans le navigateur.
@@ -49,7 +50,7 @@ L'application utilise **`data/Bivacco_Explorer_enrichi.csv`** : **146 lignes sai
 
 Les **57 lieux disposent maintenant d'une photo servie localement**, dont celle de Resegotti fournie séparément. `data/photos.json` associe les URL historiques aux fichiers de `public/images/bivouacs/`, avec provenance, date de vérification et empreinte SHA-256. Trois URL en erreur ont été remplacées par des photos sourcées ; les CSV d'origine restent intacts. Le bilan détaillé et les commandes de vérification sont dans [docs/PHOTO_AUDIT.md](docs/PHOTO_AUDIT.md).
 
-Sur la carte, cliquer un bivouac ouvre une popup avec un petit carrousel : la photo principale, puis jusqu'à trois photos de plus, dont l'intérieur quand on en a trouvé une fiable. **134 photos supplémentaires couvrent 52 lieux, dont 51 vues d'intérieur.** Elles viennent de camptocamp, refuges.info et Wikimedia Commons, sont servies localement et chaque vue affiche son auteur, sa licence et un lien vers la source. `data/photo-gallery.json` garde leur provenance et leur empreinte. Cinq lieux n'ont que leur photo principale : on n'a rien trouvé de fiable, et on préfère monter voir que deviner.
+Un petit carrousel montre la photo principale, puis jusqu'à trois photos de plus, dont l'intérieur quand on en a trouvé une fiable : dans la popup de la carte, sur les cartes de la mosaïque et en tête de fiche, qu'on l'ouvre depuis la carte, la mosaïque ou la liste. **134 photos supplémentaires couvrent 52 lieux, dont 51 vues d'intérieur.** Elles viennent de camptocamp, refuges.info et Wikimedia Commons, sont servies localement et la popup et la fiche affichent pour chaque vue son auteur, sa licence et un lien vers la source ; dans la mosaïque, ce crédit apparaît au survol de la photo. `data/photo-gallery.json` garde leur provenance et leur empreinte. Cinq lieux n'ont que leur photo principale : on n'a rien trouvé de fiable, et on préfère monter voir que deviner.
 
 Le classeur historique **`data/Bivacco Backlog.xlsx`** et sa conversion `data/bivouacs.csv` sont conservés intacts. Pour reproduire uniquement cette conversion historique :
 
@@ -110,7 +111,8 @@ La procédure complète, les contrôles PWA et le parcours **Cloudflare Pages en
 - `src/lib/csv.ts` : import, normalisation, regroupement saisonnier et export sans perte des données sources.
 - `src/lib/enrichment.ts` : rapprochement des contrôles et lecture de la provenance GPS/photo.
 - `src/lib/photos.ts` et `data/photos.json` : résolution des photos locales sans modifier les sources ni les sauvegardes personnelles.
-- `src/lib/gallery.ts` et `data/photo-gallery.json` : photos supplémentaires du carrousel de la carte, avec auteur, licence et source.
+- `src/lib/gallery.ts` et `data/photo-gallery.json` : photos supplémentaires du carrousel, avec auteur, licence et source.
+- `src/components/PhotoCarousel.tsx` : le carrousel partagé par la popup de la carte, la mosaïque et la fiche.
 - `src/lib/seed-update.ts` : mise à jour du jeu initial sans écraser les différences personnelles.
 - `src/lib/repository.ts` : persistance locale versionnée, validation et récupération des sauvegardes.
 - `src/lib/filters.ts` : recherche, filtres et tri indépendants de la présentation.

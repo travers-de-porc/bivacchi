@@ -1,26 +1,19 @@
-import { useState } from 'react'
 import { ArrowUpRight, Bookmark, Check, Clock3, Mountain, MoveUpRight, MapPin, Tent } from 'lucide-react'
 import type { Bivouac, BivouacChanges, Season } from '@/types/bivouac'
 import { getSeasonProfile } from '@/lib/csv'
-import { getPhotoUrl } from '@/lib/photos'
+import { getDisplayPhotos } from '@/lib/gallery'
 import { formatHours, formatNumber } from '@/lib/utils'
+import { PhotoCarousel } from './PhotoCarousel'
 import { Button } from './ui/button'
 
-export function BivouacImage({ bivouac, className = '' }: { bivouac: Bivouac; className?: string }) {
-  const image = getPhotoUrl(bivouac)
-  const [failedImage, setFailedImage] = useState<string | null>(null)
-  return <div className={`bivouac-image ${className}`}>
-    {image && failedImage !== image ? <img src={image} alt={bivouac.name} loading="lazy" referrerPolicy="no-referrer" onError={() => setFailedImage(image)} />
-      : <div className="image-placeholder"><Mountain strokeWidth={0.8} size={76} /><span>Photo aux abonnés absents</span></div>}
-  </div>
-}
 export function BivouacCard({ bivouac, season, onOpen, onUpdate }: {
   bivouac: Bivouac; season: Season | 'all'; onOpen: (id: string) => void; onUpdate: (id: string, changes: BivouacChanges) => boolean
 }) {
   const profile = getSeasonProfile(bivouac, season)
   return <article className="bivouac-card">
     <div className="card-visual">
-      <button className="image-link" onClick={() => onOpen(bivouac.id)} aria-label={`Découvrir ${bivouac.name}`}><BivouacImage bivouac={bivouac} /></button>
+      <PhotoCarousel variant="card" photos={getDisplayPhotos(bivouac)} name={bivouac.name} onOpen={() => onOpen(bivouac.id)}
+        placeholder={<div className="image-placeholder"><Mountain strokeWidth={0.8} size={76} /><span>Photo aux abonnés absents</span></div>} />
       <span className="altitude-badge"><Mountain size={13} /> {bivouac.altitudeM === null ? 'Altitude : aucune idée' : formatNumber(bivouac.altitudeM, ' m')}</span>
       <button className={`bookmark-button ${bivouac.wishlist ? 'is-saved' : ''}`} aria-label={`${bivouac.wishlist ? 'Retirer' : 'Ajouter'} ${bivouac.name} ${bivouac.wishlist ? 'des' : 'aux'} envies`} aria-pressed={bivouac.wishlist} onClick={() => onUpdate(bivouac.id, { wishlist: !bivouac.wishlist })}><Bookmark size={18} fill={bivouac.wishlist ? 'currentColor' : 'none'} /></button>
       {bivouac.visited && <span className="visited-badge"><Check size={12} /> Fait</span>}

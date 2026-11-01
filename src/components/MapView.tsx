@@ -146,7 +146,7 @@ export default function MapView({ bivouacs, onSelect }: MapViewProps) {
                 } }}
               >
                 <div className="map-popup">
-                  <PhotoCarousel photos={getDisplayPhotos(bivouac)} name={bivouac.name} />
+                  <PhotoCarousel variant="popup" photos={getDisplayPhotos(bivouac)} name={bivouac.name} />
                   <div className="map-popup-body">
                     <span className="map-popup-sector">{bivouac.sector || 'Secteur : aucune idée'}</span>
                     <h3>{bivouac.name}</h3>
