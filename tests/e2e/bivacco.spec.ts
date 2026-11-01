@@ -122,6 +122,20 @@ test('map displays only supplied coordinates and explains unlocated selections',
   await expect(page.getByRole('heading', { name: 'Rien à placer sur la carte' })).toBeVisible()
 })
 
+test('Beltrando shows its sourced summit ascent while keeping the supplied rows', async ({ page }) => {
+  await page.getByRole('textbox', { name: 'Rechercher un bivouac' }).fill('Beltrando')
+  await expect(page.locator('.bivouac-card')).toContainText('3 h 22')
+  await page.getByRole('link', { name: 'Bivacco Beltrando', exact: true }).click()
+  const dialog = page.getByRole('dialog')
+  await expect(dialog.getByText(/sommet même de la Punta Rama/).first()).toBeVisible()
+  await expect(dialog.locator('.detail-stats')).toContainText('3 h 22')
+  await expect(dialog.getByRole('heading', { name: 'L’itinéraire', exact: true })).toBeVisible()
+  await expect(dialog.getByRole('paragraph').filter({ hasText: /cotation EEA/ })).toBeVisible()
+  await expect(dialog.getByRole('link', { name: 'comune.frassinetto.to.it' })).toHaveAttribute('href', /^https:\/\/www\.comune\.frassinetto\.to\.it\//)
+  await expect(dialog.locator('.source-record summary', { hasText: 'Bivacco_Explorer_complements.csv' })).toHaveCount(2)
+  await expect(dialog.locator('.source-record summary', { hasText: 'Bivacco Backlog.xlsx' })).toHaveCount(2)
+})
+
 test('map popup shows a local photo carousel with interior views and credits', async ({ page }) => {
   await page.getByRole('textbox', { name: 'Rechercher un bivouac' }).fill('Bivouac du Dolent')
   await page.getByRole('button', { name: 'Carte géographique', exact: true }).click()

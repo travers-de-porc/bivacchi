@@ -1,19 +1,22 @@
 import { useState } from 'react'
 import seedCsv from '../../data/Bivacco_Explorer_enrichi.csv?raw'
 import controlsCsv from '../../data/Bivacco_Explorer_sources_et_controles.csv?raw'
+import complementsCsv from '../../data/Bivacco_Explorer_complements.csv?raw'
 import previousSeedCsv from '../../data/bivouacs.csv?raw'
+import { applyComplements } from '@/lib/complements'
 import { mergeBivouacs, parseBivouacsCsv } from '@/lib/csv'
 import { attachSourceControls } from '@/lib/enrichment'
 import { createLocalRepository } from '@/lib/repository'
 import type { Bivouac, BivouacChanges } from '@/types/bivouac'
 
-const seed = attachSourceControls(parseBivouacsCsv(seedCsv, 'Bivacco_Explorer_enrichi.csv').bivouacs, controlsCsv)
-const previousSeed = parseBivouacsCsv(previousSeedCsv, 'Bivacco Backlog.xlsx').bivouacs
+const enrichedSeed = attachSourceControls(parseBivouacsCsv(seedCsv, 'Bivacco_Explorer_enrichi.csv').bivouacs, controlsCsv)
+const seed = applyComplements(enrichedSeed, complementsCsv)
+const originalSeed = parseBivouacsCsv(previousSeedCsv, 'Bivacco Backlog.xlsx').bivouacs
 const repository = createLocalRepository({
   getItem: key => window.localStorage.getItem(key),
   setItem: (key, value) => window.localStorage.setItem(key, value),
   removeItem: key => window.localStorage.removeItem(key),
-}, { revision: 'enriched-2026-10', previousSeed })
+}, { revision: 'complements-2026-11', previous: { '': originalSeed, 'enriched-2026-10': enrichedSeed } })
 export function useBivouacs() {
   const [initial] = useState(() => repository.load(seed))
   const [bivouacs, setBivouacs] = useState(initial.bivouacs)

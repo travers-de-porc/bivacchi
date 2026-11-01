@@ -35,6 +35,11 @@ export interface SeasonalProfile {
   skiDifficulty: string | null
   reliability: string | null
   originalNotes: string | null
+  /** Route text from a sourced complement; the backlog itself has no route column. */
+  route: string | null
+  /** URL and ISO date of the complement that filled values of this source row. */
+  complementSource: string | null
+  complementDate: string | null
 }
 
 export interface BivouacLinks {

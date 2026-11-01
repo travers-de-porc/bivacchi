@@ -154,13 +154,24 @@ La fusion conserve les lieux existants et ajoute les nouveaux. Elle rapproche d'
 
 Les colonnes inconnues sont toujours conservées dans `rawRecords[].values` et réexportées. Une sauvegarde Bivacco réimportée utilise `__bivacco_raw` et `__bivacco_edits` comme source fidèle ; une édition manuelle des seules colonnes visibles d'une sauvegarde ne remplace pas ces blocs. Pour importer un tableau externe modifié manuellement, retirer les quatre colonnes `__bivacco_*` et conserver la colonne de nom ; les données originales antérieures resteront dans la collection lors de la fusion.
 
+## Compléments sourcés
+
+**`data/Bivacco_Explorer_complements.csv`** complète des valeurs absentes ou fausses du jeu fourni, sans modifier ni les deux CSV enrichis, ni le classeur. Chaque ligne vise **une** ligne source précise via `Complète [source]`, `Complète [feuille]` et `Complète [ligne]`, et porte sa provenance : `Source du complément` (URL), `Date du complément` (ISO), `Note du complément`, et `Source de la description` quand le texte du lieu change.
+
+- Les colonnes non vides d'un complément remplacent celles de la ligne visée **pour calculer le profil saisonnier** ; la ligne fournie reste intacte dans les données originales, et le complément y apparaît comme sa propre ligne (`Bivacco_Explorer_complements.csv`). Aucun onglet de saison n'est ajouté.
+- Colonnes propres aux compléments : `Itinéraire` → `seasons[].route` ; `Source du complément` → `seasons[].complementSource` ; `Date du complément` → `seasons[].complementDate`. La fiche affiche l'itinéraire et une note de provenance datée.
+- `Description` et `Coup de cœur` d'un complément remplacent le texte du lieu dans le jeu initial ; une modification personnelle reste prioritaire lors de l'actualisation d'un carnet.
+- Un complément qui vise un lieu inconnu ou une ligne source absente bloque l'assemblage du jeu initial au lieu d'être ignoré.
+
+Premier complément, au 1er novembre 2026 : **Bivacco Beltrando**, au sommet même de la Punta Rama. Ses deux lignes (Été 39, Automne 53) indiquaient `Montée (h) ≈ 0.0` et une description signalant un lieu à identifier. La montée vient de la fiche du [parcours n° 8/3 de la commune de Frassinetto](https://www.comune.frassinetto.to.it/it-it/vivere-il-comune/itinerari/percorso-n-8-3-collegamento-alpe-losa-bivacco-punta-rama-56104-1-2b5c2ed1c89e6ed1e66e629d6c4515e6) : 4,6 km, +1 207 m, 3 h 22 (soit 3,37 h), cotation EEA, avec le tracé par l'Alpe I Piani et les baites de Livi. Le D+ de la ligne source (1 204 m) est conservé. La description du lieu (inauguration le 10 juillet 2022, 8 couchages, poêle, photovoltaïque, accès par la crête depuis la Punta Verzel) vient de l'[article de Montagna.TV du 28 août 2022](https://www.montagna.tv/204567/piemonte-inaugurato-un-nuovo-bivacco-a-2439-metri-di-quota/) ; c'est l'équipement décrit à l'inauguration, pas un état actuel. Le `Trajet voiture` (`0h00`), les évaluations et le départ d'hiver restent ceux du fichier fourni.
+
 ## Actualisation des carnets déjà enregistrés
 
 Le dépôt local reconnaît les sauvegardes antérieures sans `seedRevision`. `src/lib/seed-update.ts` compare le CSV historique, le carnet sauvegardé et le jeu enrichi : seules les valeurs restées égales au jeu historique sont actualisées. Les corrections de nom, secteur, altitude, texte ou coordonnées, les envies, visites, notes personnelles et les lieux ajoutés restent conservés. Les lignes d'imports personnels restent prioritaires pour leurs images et liens ; les lignes historiques et les nouveaux contrôles sont conservés ensemble dans l'export.
 
 Les différences de retours à la ligne CRLF/LF ne créent pas de profils saisonniers en double. Le texte exact demeure dans chaque ligne source. Un carnet actualisé peut donc exporter plus de 146 lignes, puisqu'il conserve aussi ses sources historiques et ses imports.
 
-La lecture n'écrit pas dans `localStorage`. La révision `enriched-2026-10` est enregistrée à la prochaine sauvegarde, empêchant de réappliquer l'enrichissement à une suppression volontaire de coordonnées faite ensuite. Une révision inconnue protège la sauvegarde contre l'écrasement. Une future mise à jour du jeu initial devra disposer de sa propre migration explicite.
+La lecture n'écrit pas dans `localStorage`. La révision courante, `complements-2026-11`, est enregistrée à la prochaine sauvegarde, empêchant de réappliquer une mise à jour à une suppression volontaire faite ensuite. `src/hooks/useBivouacs.ts` garde le jeu initial de chaque révision antérieure : le CSV historique pour un carnet sans révision, le jeu enrichi sans compléments pour `enriched-2026-10`. La même comparaison à trois points s'applique depuis l'une ou l'autre. Une révision inconnue protège la sauvegarde contre l'écrasement. Une future mise à jour du jeu initial devra ajouter sa révision et conserver le jeu précédent.
 
 ## Vérifications
 

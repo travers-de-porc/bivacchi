@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import Papa from 'papaparse'
+import { applyComplements } from './complements'
 import { exportBivouacsCsv, mergeBivouacs, parseBivouacsCsv } from './csv'
 import { attachSourceControls, getEnrichment } from './enrichment'
 import { createLocalRepository, STORAGE_KEY } from './repository'
@@ -9,9 +10,10 @@ import { updateSeed } from './seed-update'
 
 const readData = (file: string) => readFileSync(new URL(`../../data/${file}`, import.meta.url), 'utf8')
 const previousSeed = parseBivouacsCsv(readData('bivouacs.csv'), 'Bivacco Backlog.xlsx').bivouacs
-const nextSeed = attachSourceControls(parseBivouacsCsv(readData('Bivacco_Explorer_enrichi.csv')).bivouacs,
+const enrichedSeed = attachSourceControls(parseBivouacsCsv(readData('Bivacco_Explorer_enrichi.csv')).bivouacs,
   readData('Bivacco_Explorer_sources_et_controles.csv'))
-const options = { revision: 'enriched-2026-10', previousSeed }
+const nextSeed = applyComplements(enrichedSeed, readData('Bivacco_Explorer_complements.csv'))
+const options = { revision: 'complements-2026-11', previous: { '': previousSeed, 'enriched-2026-10': enrichedSeed } }
 
 test('the enriched seed updates all old positions and photos without losing historic source rows or adding seasonal tabs', () => {
   const original = structuredClone(previousSeed)
@@ -91,4 +93,33 @@ test('an unrecognized seed revision protects the stored backup from accidental d
   assert.equal(result.recovery, raw)
   assert.throws(() => repository.save(nextSeed), /protégée/)
   assert.equal(writes, 0)
+})
+
+test('a notebook saved with the enriched revision receives the sourced complements without losing personal edits', () => {
+  const values = new Map<string, string>()
+  const storage = {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => { values.set(key, value) },
+    removeItem: (key: string) => { values.delete(key) },
+  }
+  const saved = structuredClone(enrichedSeed)
+  const beltrando = saved.find(item => item.name === 'Bivacco Beltrando')!
+  Object.assign(beltrando, { wishlist: true, personalNotes: 'Prévoir la frontale' })
+  const other = saved.find(item => item.id !== beltrando.id)!
+  other.description = 'Ma description à moi'
+  createLocalRepository(storage, { revision: 'enriched-2026-10', previous: { '': previousSeed } }).save(saved)
+  const repository = createLocalRepository(storage, options)
+  const result = repository.load(nextSeed)
+  assert.equal(result.error, null)
+  const upgraded = result.bivouacs.find(item => item.id === beltrando.id)!
+  const expected = nextSeed.find(item => item.id === beltrando.id)!
+  assert.deepEqual(upgraded.seasons, expected.seasons)
+  assert.deepEqual(upgraded.seasons.map(profile => [profile.season, profile.ascentHours]), [['Été', 3.37], ['Automne', 3.37]])
+  assert.equal(upgraded.description, expected.description)
+  assert.equal(upgraded.wishlist, true)
+  assert.equal(upgraded.personalNotes, 'Prévoir la frontale')
+  assert.equal(result.bivouacs.find(item => item.id === other.id)!.description, 'Ma description à moi')
+  repository.save(result.bivouacs)
+  assert.equal(JSON.parse(values.get(STORAGE_KEY)!).seedRevision, options.revision)
+  assert.deepEqual(createLocalRepository(storage, options).load(nextSeed).bivouacs, result.bivouacs)
 })

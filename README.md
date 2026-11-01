@@ -45,7 +45,7 @@ Playwright démarre automatiquement la prévisualisation sur le port 4173, ou r�
 
 ## Source des données
 
-L'application utilise **`data/Bivacco_Explorer_enrichi.csv`** : **146 lignes saisonnières regroupées en 57 lieux**, avec **57 paires de coordonnées explicites et 56 URL de photos**. `data/Bivacco_Explorer_sources_et_controles.csv` apporte les sources et les contrôles de ces 57 lieux. Leur provenance et les réserves de fiabilité sont consultables dans les fiches.
+L'application utilise **`data/Bivacco_Explorer_enrichi.csv`** : **146 lignes saisonnières regroupées en 57 lieux**, avec **57 paires de coordonnées explicites et 56 URL de photos**. `data/Bivacco_Explorer_sources_et_controles.csv` apporte les sources et les contrôles de ces 57 lieux. Leur provenance et les réserves de fiabilité sont consultables dans les fiches. `data/Bivacco_Explorer_complements.csv` corrige ou complète, ligne source par ligne source, ce qui manquait, avec une source et une date : pour l'instant la montée et l'itinéraire du Bivacco Beltrando, posé au sommet même de la Punta Rama. Les CSV fournis restent intacts.
 
 Les **57 lieux disposent maintenant d'une photo servie localement**, dont celle de Resegotti fournie séparément. `data/photos.json` associe les URL historiques aux fichiers de `public/images/bivouacs/`, avec provenance, date de vérification et empreinte SHA-256. Trois URL en erreur ont été remplacées par des photos sourcées ; les CSV d'origine restent intacts. Le bilan détaillé et les commandes de vérification sont dans [docs/PHOTO_AUDIT.md](docs/PHOTO_AUDIT.md).
 
@@ -69,7 +69,7 @@ Les changements sont stockés dans `localStorage` sur cet appareil, pour l’ori
 
 La persistance utilise une enveloppe versionnée et le même format CSV validé que les sauvegardes. Une sauvegarde locale illisible ou d’une version future bloque les écritures automatiques ; conserver le fichier de récupération proposé avant de demander explicitement sa réinitialisation.
 
-Les carnets enregistrés avant l'enrichissement sont actualisés au chargement : les valeurs inchangées reçoivent les nouvelles coordonnées et photos. Les corrections locales, envies, visites, notes et imports supplémentaires sont conservés, ainsi que leurs lignes source historiques. Aucune réinitialisation n'est nécessaire. La mise à jour n'écrit dans le stockage qu'à la prochaine modification enregistrée.
+Les carnets enregistrés avant l'enrichissement ou avant les compléments sont actualisés au chargement : les valeurs inchangées reçoivent les nouvelles coordonnées, photos et données d'accès. Les corrections locales, envies, visites, notes et imports supplémentaires sont conservés, ainsi que leurs lignes source historiques. Aucune réinitialisation n'est nécessaire. La mise à jour n'écrit dans le stockage qu'à la prochaine modification enregistrée.
 
 Exporter régulièrement via **Mes données → Exporter en CSV**, notamment avant de vider les données du navigateur ou d’importer un autre fichier. Oui, régulièrement : tout le monde connaît quelqu’un qui a perdu son carnet. Conserver cette sauvegarde hors du navigateur ; **Choisir un fichier CSV**, dans la même fenêtre, permet de la reprendre. L’export conserve les données sources ainsi que les modifications, notes et statuts personnels.
 

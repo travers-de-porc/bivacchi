@@ -61,6 +61,16 @@ function EditForm({ bivouac, onSave, onCancel }: {
   </form>
 }
 
+function ComplementNotice({ source, date }: { source: string; date: string | null }) {
+  const href = safeUrl(source)
+  const day = date && /^\d{4}-\d{2}-\d{2}$/.test(date)
+    ? new Date(`${date}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+    : date
+  return <p className="notice">Accès complété{day ? ` le ${day}` : ''} d’après {href
+    ? <a className="inline-flex items-center gap-1 underline" href={href} target="_blank" rel="noopener noreferrer">{new URL(href).hostname.replace(/^www\./, '')}<ExternalLink size={12} aria-hidden="true" /></a>
+    : source}. Durée de fiche officielle : elle suppose qu’on ne s’arrête pas à chaque replat pour sortir le saucisson.</p>
+}
+
 function SeasonalDetails({ profile }: { profile: SeasonalProfile | undefined }) {
   if (!profile) return <p className="muted">Aucune donnée de saison pour ce lieu. Le fichier source est resté muet.</p>
   const ratings: [string, number | null][] = [
@@ -78,7 +88,9 @@ function SeasonalDetails({ profile }: { profile: SeasonalProfile | undefined }) 
       <div><h4>Départ été</h4><p>{profile.summerDeparture || 'Aucune idée'}</p><p className="muted">Altitude : {formatNumber(profile.summerDepartureAltitudeM, ' m')}</p></div>
       <div><h4>Départ hiver</h4><p>{profile.winterDeparture || 'Aucune idée'}</p><p className="muted">Altitude : {formatNumber(profile.winterDepartureAltitudeM, ' m')}</p></div>
     </div>
-    <p className="notice">Accès et évaluations tirés du backlog, pour {profile.season ? `la saison ${profile.season.toLocaleLowerCase('fr')}` : 'une saison non précisée'}. Ce n’est pas un bulletin des conditions : personne n’est monté vérifier ce matin.</p>
+    {profile.route && <div className="detail-section"><h4>L’itinéraire</h4><p className="whitespace-pre-wrap">{profile.route}</p></div>}
+    {profile.complementSource && <ComplementNotice source={profile.complementSource} date={profile.complementDate} />}
+    <p className="notice">{profile.complementSource ? 'Évaluations tirées' : 'Accès et évaluations tirés'} du backlog, pour {profile.season ? `la saison ${profile.season.toLocaleLowerCase('fr')}` : 'une saison non précisée'}. Ce n’est pas un bulletin des conditions : personne n’est monté vérifier ce matin.</p>
     <h4>Évaluations du fichier source (pas des avis du jour)</h4>
     <dl className="detail-ratings">
       {ratings.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{formatNumber(value, ' / 5')}</dd></div>)}

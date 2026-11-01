@@ -4,7 +4,8 @@ import { updateSeed } from './seed-update'
 
 export const STORAGE_KEY = 'bivacco-explorer:v1'
 interface StoredData { version: 1; csv: string; savedAt: string; seedRevision?: string }
-interface SeedUpdate { revision: string; previousSeed: Bivouac[] }
+/** Earlier bundled datasets by stored revision; '' is a notebook saved before revisions were recorded. */
+interface SeedUpdate { revision: string; previous: Readonly<Record<string, readonly Bivouac[]>> }
 export interface LoadResult { bivouacs: Bivouac[]; error: string | null; recovery: string | null }
 export interface BivouacRepository {
   load(seed: Bivouac[]): LoadResult
@@ -24,13 +25,14 @@ export function createLocalRepository(storage: Pick<Storage, 'getItem' | 'setIte
         if (!stored || typeof stored !== 'object' || !('version' in stored) || stored.version !== 1 || !('csv' in stored) || typeof stored.csv !== 'string') {
           throw new Error('Format de sauvegarde inconnu ou version plus récente.')
         }
-        if (seedUpdate && 'seedRevision' in stored && stored.seedRevision !== seedUpdate.revision) {
+        const revision = 'seedRevision' in stored ? stored.seedRevision : ''
+        const previousSeed = seedUpdate && typeof revision === 'string' && revision !== seedUpdate.revision &&
+          Object.hasOwn(seedUpdate.previous, revision) ? seedUpdate.previous[revision] : null
+        if (seedUpdate && revision !== seedUpdate.revision && !previousSeed) {
           throw new Error('Version du jeu de données non prise en charge.')
         }
         const { bivouacs } = parseBivouacsCsv(stored.csv, 'Sauvegarde locale')
-        const refreshed = seedUpdate && !('seedRevision' in stored)
-          ? updateSeed(bivouacs, seedUpdate.previousSeed, seed)
-          : bivouacs
+        const refreshed = previousSeed ? updateSeed(bivouacs, previousSeed, seed) : bivouacs
         return { bivouacs: refreshed, error: null, recovery: null }
       } catch {
         blocked = true

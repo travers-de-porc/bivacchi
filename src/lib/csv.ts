@@ -137,14 +137,35 @@ function profile(row: Record<string, string>, warnings: Set<string>): SeasonalPr
     skiDifficulty: nonEmpty(row['Difficulté ski (FR)']),
     reliability: nonEmpty(row['Fiabilité des données']),
     originalNotes: nonEmpty(row['Notes originales']),
+    route: nonEmpty(row['Itinéraire']),
+    complementSource: nonEmpty(row['Source du complément']),
+    complementDate: nonEmpty(row['Date du complément']),
   }
+}
+
+// A complement row fills named columns of one source row, which itself stays untouched.
+const COMPLEMENT_IDENTITY = ['Source', 'Feuille', 'Ligne', 'Cabane / lieu', 'Secteur', 'Complète [source]', 'Complète [feuille]', 'Complète [ligne]']
+
+export function isComplement(record: SourceRecord): boolean {
+  return !!record.values['Complète [source]']?.trim()
+}
+
+export function completes(complement: SourceRecord, record: SourceRecord): boolean {
+  return !isComplement(record) && complement.values['Complète [source]']?.trim() === record.source &&
+    complement.values['Complète [feuille]']?.trim() === record.sheet && numeric(complement.values['Complète [ligne]']) === record.row
 }
 
 /** Derive profiles in source order after a dataset update, retaining distinct imported approaches. */
 export function profilesFromRecords(records: readonly SourceRecord[]): SeasonalProfile[] {
+  const complements = records.filter(isComplement)
   const profiles = new Map<string, SeasonalProfile>()
   for (const record of records) {
-    const item = profile(record.values, new Set())
+    if (isComplement(record)) continue
+    const values = complements.filter((complement) => completes(complement, record)).reduce((current, complement) => ({
+      ...current,
+      ...Object.fromEntries(Object.entries(complement.values).filter(([key, value]) => !COMPLEMENT_IDENTITY.includes(key) && value.trim())),
+    }), record.values)
+    const item = profile(values, new Set())
     if (!profiles.has(profileKey(item))) profiles.set(profileKey(item), item)
   }
   return [...profiles.values()]
@@ -276,7 +297,6 @@ export function parseBivouacsCsv(text: string, sourceName = 'Import CSV'): CsvIm
       }
       if (!existing.description) existing.description = valueOf(row, 'Description')
       if (!existing.highlight) existing.highlight = valueOf(row, 'Coup de cœur')
-      if (!existing.seasons.some((item) => profileKey(item) === profileKey(seasonal))) existing.seasons.push(seasonal)
       existing.rawRecords.push(raw)
     } else {
       places.set(id, {
@@ -292,7 +312,7 @@ export function parseBivouacsCsv(text: string, sourceName = 'Import CSV'): CsvIm
           accessSource: link(row, 'Source altitude / accès'),
           skiSource: link(row, 'Source cotation C2C'),
         },
-        seasons: [seasonal], rawRecords: [raw],
+        seasons: [], rawRecords: [raw],
         wishlist: false,
         visited: ['fait', 'visite', 'visité'].includes(normalize(seasonal.sourceStatus)),
         personalNotes: '',
@@ -307,6 +327,8 @@ export function parseBivouacsCsv(text: string, sourceName = 'Import CSV'): CsvIm
   })
   const bivouacs = [...places.values()]
   for (const bivouac of bivouacs) {
+    // Complements may follow their source row, so profiles are derived once every row is known.
+    bivouac.seasons = profilesFromRecords(bivouac.rawRecords)
     const changes = modifications.get(bivouac.id)
     if (changes) Object.assign(bivouac, JSON.parse(changes) as BivouacChanges)
   }
