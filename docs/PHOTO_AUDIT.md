@@ -22,13 +22,29 @@ Le nombre de six échecs observés dans le navigateur n'a pas été reproduit à
 
 Les URL originales, les résultats HTTP et leurs dates restent dans `data/photos.json`. Les CSV fournis sont inchangés. Aucune autorisation de réutilisation n'est déduite d'une URL ; les crédits connus et les sources sont conservés.
 
+## Galerie de la carte
+
+Sur la carte, la popup d'un lieu ouvre un petit carrousel : la photo principale ci-dessus, puis jusqu'à trois photos supplémentaires, dont l'intérieur lorsqu'une photo fiable existe. Ces photos ont leur propre catalogue, `data/photo-gallery.json`, chargé seulement avec la carte ; `data/photos.json` et ses 57 entrées n'ont pas changé.
+
+- **134 photos pour 52 lieux** : 51 intérieurs, 71 extérieurs et 12 vues des alentours, soit 11 321 010 octets (environ 11,32 Mo).
+- Sources ouvertes et attribuables uniquement : camptocamp.org (images collaboratives CC BY-SA 3.0, personnelles CC BY-NC-ND 3.0), refuges.info (CC BY-SA 2.0 FR) et Wikimedia Commons (licence propre à chaque fichier). Répartition : 60 photos refuges.info, 52 camptocamp (39 collaboratives, 13 personnelles) et 22 Commons (8 CC BY-SA 4.0, 6 CC BY-SA 3.0, 2 CC BY-SA 2.5, 1 CC BY-SA 2.0 FR, 2 CC BY 3.0, 1 CC BY 4.0, 2 CC0).
+- Recherche par proximité des coordonnées déclarées : fiches camptocamp et refuges.info voisines, fichiers Commons géolocalisés à quelques centaines de mètres, puis recherche Commons par nom. Chaque candidate a été regardée : elle doit montrer ce lieu, sans topo annoté ni portrait au premier plan. Le classement intérieur, extérieur ou alentours vient de cet examen ; la légende de la source est conservée dans `sourceTitle`.
+- Homonymes et voisins écartés : le Refuge du Pigeonnier de Wissembourg (Commons), le Bivacco dal Bianco voisin de la Punta Penia (camptocamp), le Bivouac Leonessa du Valnontey pour Leonesi, et l'ancien ricovero de l'Alpetto devenu musée, pour ne pas le présenter comme l'intérieur du refuge actuel.
+- Fichiers servis tels que la source les fournit, sans recadrage ni recompression : déclinaison `MI` de camptocamp (400 px), image `reduite` de refuges.info (700 px) et vignette Commons de 960 px. `url` est l'adresse téléchargée ; `sourceUrl`, la page de la photo, avec l'ancre du commentaire pour refuges.info.
+- `takenOn` est une date de prise de vue fournie par la source. `publishedOn` est la date du commentaire refuges.info : la photo peut être plus ancienne. La popup affiche l'année disponible. Une photo montre l'état du jour où elle a été prise, pas l'état actuel.
+- Trois commentaires refuges.info anonymes restent sans auteur : aucun nom n'est inventé. Le crédit Commons « The original uploader was Orobicon at Italian Wikipedia » est abrégé en « Orobicon (Wikipédia en italien) ».
+- Cinq lieux n'ont pas de galerie : Capanna Luigina Resegotti (seule photo trouvée centrée sur une personne), rifugio Vittorio Raffaele Leonesi (seulement une carte), Bivouac Fanton, Bivacco Beltrando et Bivacco Camposecco (aucune photo trouvée). Leur photo principale s'affiche seule.
+- La galerie n'apparaît que si la photo principale est la photo cataloguée du lieu. Un import personnel avec une autre photo garde la sienne, sans galerie.
+- Les images personnelles camptocamp (CC BY-NC-ND) sont utilisées sans modification dans ce carnet non commercial. Un usage commercial du site imposerait de les retirer ou d'obtenir l'accord des auteurs.
+
 ## Intégration et maintenance
 
-- `data/photos.json` relie l'identifiant du lieu, l'URL d'origine, l'URL téléchargée, la page source et le chemin local. Il contient aussi dimensions, taille, SHA-256, date et crédit connu.
+- `data/photos.json` relie l'identifiant du lieu, l'URL d'origine, l'URL téléchargée, la page source et le chemin local. Il contient aussi dimensions, taille, SHA-256, date et crédit connu. `data/photo-gallery.json` contient les mêmes informations de fichier pour la galerie, avec la vue, l'auteur, la licence et les dates.
+- `src/lib/gallery.ts` assemble le carrousel ; seul le chunk de la carte l'importe, ce qui laisse le bundle principal à sa taille.
 - Les noms sous `public/images/bivouacs/` contiennent les 12 premiers caractères du SHA-256 ; Cloudflare peut les servir avec un cache immutable. Une autre image reçoit un autre nom.
 - `src/lib/photos.ts` résout la photo pour l'affichage sans changer `Bivouac.imageUrl`, les données originales ou les sauvegardes. Les carnets existants bénéficient donc des photos locales sans réinitialisation. Une photo importée avec une autre URL garde sa propre source.
 - Vite copie les fichiers dans `dist/images/bivouacs/`. Le build n'effectue aucun téléchargement réseau et aucune variable d'environnement n'est nécessaire.
-- La PWA précache les 57 fichiers. La limite par fichier est de 6 Mio pour inclure l'original Regondi-Gavazzi de 5,58 Mo, un JPEG contenant des métadonnées MPO et décodable par Chromium. Le premier cache télécharge environ 24,65 Mo de photos ; elles sont disponibles hors connexion lorsque ce cache est terminé. Les tuiles OpenStreetMap et les photos externes des imports restent hors de ce cache.
+- La PWA précache les 191 fichiers (57 photos principales et 134 de galerie). La limite par fichier est de 6 Mio pour inclure l'original Regondi-Gavazzi de 5,58 Mo, un JPEG contenant des métadonnées MPO et décodable par Chromium. Le premier cache télécharge environ 35,97 Mo de photos (24,65 Mo de photos principales, 11,32 Mo de galerie) ; elles sont disponibles hors connexion lorsque ce cache est terminé. Les tuiles OpenStreetMap et les photos externes des imports restent hors de ce cache.
 
 Vérifier les fichiers locaux, avec Python 3 et sa bibliothèque standard :
 

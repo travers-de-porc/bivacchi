@@ -122,6 +122,32 @@ test('map displays only supplied coordinates and explains unlocated selections',
   await expect(page.getByRole('heading', { name: 'Rien à placer sur la carte' })).toBeVisible()
 })
 
+test('map popup shows a local photo carousel with interior views and credits', async ({ page }) => {
+  await page.getByRole('textbox', { name: 'Rechercher un bivouac' }).fill('Bivouac du Dolent')
+  await page.getByRole('button', { name: 'Carte géographique', exact: true }).click()
+  await expect(page.locator('.leaflet-marker-icon')).toHaveCount(1)
+  await page.locator('.leaflet-marker-icon').click()
+  const carousel = page.getByRole('region', { name: 'Photos de Bivouac du Dolent CAS' })
+  await expect(carousel).toBeVisible()
+  await expect(carousel.getByText('1 / 4', { exact: true })).toBeVisible()
+  const images = carousel.locator('img')
+  await expect(images).toHaveCount(4)
+  const decoded = await images.evaluateAll(async elements => Promise.all(elements.map(async element => {
+    const image = element as HTMLImageElement
+    image.loading = 'eager'
+    try { await image.decode() } catch { return false }
+    return new URL(image.src).origin === window.location.origin && image.getAttribute('src')!.startsWith('/images/bivouacs/') && image.naturalWidth > 0
+  })))
+  expect(decoded).toEqual([true, true, true, true])
+  await carousel.getByRole('button', { name: 'Photo suivante' }).click()
+  await expect(carousel.getByText('2 / 4', { exact: true })).toBeVisible()
+  await expect(carousel.locator('.photo-carousel-view').nth(0)).toHaveText('Intérieur')
+  await expect(carousel.locator('.photo-carousel-credit')).toContainText('Photo')
+  await expect(carousel.locator('.photo-carousel-credit a[rel~="license"]')).toHaveAttribute('href', /^https:\/\/creativecommons\.org\//)
+  await page.getByRole('button', { name: 'Jeter un œil', exact: true }).click()
+  await expect(page.getByRole('dialog')).toBeVisible()
+})
+
 test('enriched GPS reliability and source controls remain visible in the details', async ({ page }) => {
   for (const [name, reliability] of [
     ['Bivacco Carpano', 'à vérifier : sources discordantes'],

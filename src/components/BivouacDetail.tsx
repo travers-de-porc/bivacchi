@@ -157,10 +157,7 @@ export function BivouacDetail({ bivouac, onClose, onUpdate, initialSeason }: Biv
           {changedCoordinates && <p className="notice">Coordonnées modifiées par vos soins. La fiabilité GPS déclarée, elle, concerne la position du fichier source.</p>}
           {enrichment.gpsReliability && <p className="notice">Fiabilité GPS déclarée : {enrichment.gpsReliability}</p>}
           {enrichment.gpsSource && !safeUrl(enrichment.gpsSource) && <p className="muted">Source GPS : {enrichment.gpsSource}</p>}
-          {localPhoto && <p className="muted">Photo incluse dans l’application : elle a rejoint le sac, sans ajouter un gramme au vôtre.</p>}
           {localPhoto?.credit && <p className="muted">Crédit photo : {localPhoto.credit}</p>}
-          {enrichment.photoStatus && <p className="muted">Photo — statut dans le fichier source : {enrichment.photoStatus}</p>}
-          {enrichment.photoSource && !safeUrl(enrichment.photoSource) && <p className="muted">Source de la photo : {enrichment.photoSource}</p>}
           <div className="detail-links">{links.map(([label, value]) => { const href = safeUrl(value); return href ? <a key={label} href={href} target="_blank" rel="noopener noreferrer">{label}<ArrowUpRight size={16} /></a> : null })}</div>
           {!links.some(([, value]) => safeUrl(value)) && <p className="muted">Aucun lien source. Prudence, donc.</p>}
         </section>

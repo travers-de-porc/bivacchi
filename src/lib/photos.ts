@@ -19,7 +19,7 @@ export interface LocalPhoto {
 
 const photos: readonly LocalPhoto[] = catalogue.photos
 const photosById = new Map(photos.map(photo => [photo.id, photo]))
-const localPhotoPath = /^\/images\/bivouacs\/[a-z0-9][a-z0-9._-]*\.(?:avif|gif|jpe?g|png|webp)$/i
+export const localPhotoPath = /^\/images\/bivouacs\/[a-z0-9][a-z0-9._-]*\.(?:avif|gif|jpe?g|png|webp)$/i
 type PhotoReference = Pick<Bivouac, 'id' | 'imageUrl'>
 
 /** Local assets replace known source photographs without overwriting imported evidence. */

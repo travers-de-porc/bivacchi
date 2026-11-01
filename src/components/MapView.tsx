@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { divIcon, latLngBounds, type LatLngTuple } from 'leaflet'
-import { MapContainer, Marker, Popup, TileLayer, ZoomControl, useMap } from 'react-leaflet'
+import { MapContainer, Marker, Popup, TileLayer, ZoomControl, useMap, useMapEvents } from 'react-leaflet'
 import { ArrowUpRight, LocateFixed, MapPin, Mountain, RefreshCw, WifiOff } from 'lucide-react'
 import type { Bivouac, Coordinates } from '../types/bivouac'
 import { isValidCoordinates } from '../lib/csv'
 import { getEnrichment } from '../lib/enrichment'
+import { getDisplayPhotos } from '../lib/gallery'
+import { PhotoCarousel } from './PhotoCarousel'
 import 'leaflet/dist/leaflet.css'
 import './MapView.css'
 
@@ -63,6 +65,11 @@ function FrameMap({ positions }: { positions: LatLngTuple[] }) {
   )
 }
 
+function PopupWatcher({ onChange }: { onChange: (open: boolean) => void }) {
+  useMapEvents({ popupopen: () => onChange(true), popupclose: () => onChange(false) })
+  return null
+}
+
 function GpsReliability({ bivouac }: { bivouac: LocatedBivouac }) {
   const enrichment = getEnrichment(bivouac)
   const changedCoordinates = enrichment.coordinates !== null && (bivouac.coordinates.lat !== enrichment.coordinates.lat || bivouac.coordinates.lng !== enrichment.coordinates.lng)
@@ -80,6 +87,7 @@ export default function MapView({ bivouacs, onSelect }: MapViewProps) {
   const [online, setOnline] = useState(() => navigator.onLine)
   const [tileError, setTileError] = useState(false)
   const [tileAttempt, setTileAttempt] = useState(0)
+  const [popupOpen, setPopupOpen] = useState(false)
 
   useEffect(() => {
     const updateConnection = () => setOnline(navigator.onLine)
@@ -114,6 +122,7 @@ export default function MapView({ bivouacs, onSelect }: MapViewProps) {
           />
           <ZoomControl position="topright" zoomInTitle="Zoomer" zoomOutTitle="Dézoomer" />
           <FrameMap positions={positions} />
+          <PopupWatcher onChange={setPopupOpen} />
           {located.map((bivouac) => (
             <Marker
               key={bivouac.id}
@@ -123,19 +132,35 @@ export default function MapView({ bivouacs, onSelect }: MapViewProps) {
               alt={bivouac.name}
               keyboard
             >
-              <Popup minWidth={210} maxWidth={280}>
+              <Popup
+                className="bivouac-popup"
+                minWidth={256}
+                maxWidth={256}
+                // Keep the popup clear of the zoom and recentre buttons on narrow maps.
+                autoPanPaddingTopLeft={[12, 12]}
+                autoPanPaddingBottomRight={[58, 12]}
+                eventHandlers={{ add: (event) => {
+                  const close = event.target.getElement()?.querySelector('.leaflet-popup-close-button')
+                  close?.setAttribute('aria-label', 'Fermer')
+                  close?.setAttribute('title', 'Fermer')
+                } }}
+              >
                 <div className="map-popup">
-                  <span className="map-popup-sector">{bivouac.sector || 'Secteur : aucune idée'}</span>
-                  <h3>{bivouac.name}</h3>
-                  <p><Mountain size={15} aria-hidden="true" />{bivouac.altitudeM === null ? 'Altitude : aucune idée' : `${bivouac.altitudeM.toLocaleString('fr-FR')} m`}</p>
-                  <GpsReliability bivouac={bivouac} />
-                  <button type="button" onClick={() => onSelect(bivouac.id)}>Jeter un œil <ArrowUpRight size={16} aria-hidden="true" /></button>
+                  <PhotoCarousel photos={getDisplayPhotos(bivouac)} name={bivouac.name} />
+                  <div className="map-popup-body">
+                    <span className="map-popup-sector">{bivouac.sector || 'Secteur : aucune idée'}</span>
+                    <h3>{bivouac.name}</h3>
+                    <p><Mountain size={15} aria-hidden="true" />{bivouac.altitudeM === null ? 'Altitude : aucune idée' : `${bivouac.altitudeM.toLocaleString('fr-FR')} m`}</p>
+                    <GpsReliability bivouac={bivouac} />
+                    <button type="button" onClick={() => onSelect(bivouac.id)}>Jeter un œil <ArrowUpRight size={16} aria-hidden="true" /></button>
+                  </div>
                 </div>
               </Popup>
             </Marker>
           ))}
         </MapContainer>
-        {(!online || tileError) && (
+        {/* An open popup works offline; the notice would only cover its photo and close button. */}
+        {(!online || tileError) && !popupOpen && (
           <div className="map-network-notice" role="status">
             <WifiOff size={17} aria-hidden="true" />
             <span>{online ? 'Le fond de carte boude. Réessayez dans un instant.' : 'Pas de réseau, pas de fond de carte. Les bivouacs, eux, restent là.'}</span>

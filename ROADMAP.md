@@ -12,6 +12,8 @@ Les deux CSV enrichis fournis complètent désormais les 57 lieux avec leurs coo
 
 Les 57 photos, dont Resegotti ajouté séparément, sont désormais embarquées dans le site et dans le cache PWA. Le catalogue photo conserve les URL originales, les remplacements vérifiés et leur provenance sans modifier les CSV ni les carnets.
 
+Sur la carte, la popup d'un lieu montre maintenant un petit carrousel : la photo principale, puis 134 photos supplémentaires réparties sur 52 lieux, dont 51 vues d'intérieur. Elles viennent de camptocamp, refuges.info et Wikimedia Commons, avec auteur, licence et page source ; elles sont servies localement et précachées. Cinq lieux restent sans galerie faute de photo fiable : on a préféré l'attente à l'à-peu-près.
+
 Les données manquantes restent explicites. Les scores et les accès du backlog gardent leur provenance et leur saison. Une occurrence dans une feuille saisonnière n’est pas une observation datée des conditions de terrain.
 
 ## Phase 2 · Persistance partagée

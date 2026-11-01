@@ -23,11 +23,13 @@ def main():
     parser.add_argument('--restore', action='store_true', help='Download missing or damaged files; never accept changed remote content.')
     args = parser.parse_args()
     catalogue = json.loads((ROOT / 'data/photos.json').read_text(encoding='utf-8'))
-    if catalogue['version'] != 1:
+    gallery = json.loads((ROOT / 'data/photo-gallery.json').read_text(encoding='utf-8'))
+    if catalogue['version'] != 1 or gallery['version'] != 1:
         raise ValueError('Version du catalogue photo inconnue.')
     errors = []
     paths = set()
-    for photo in catalogue['photos']:
+    photos = catalogue['photos'] + gallery['photos']
+    for photo in photos:
         try:
             if not LOCAL_PATH.fullmatch(photo['localPath']) or photo['localPath'] in paths:
                 raise ValueError('Chemin local invalide ou en double.')
@@ -51,12 +53,13 @@ def main():
             temporary.write_bytes(data)
             temporary.replace(target)
         except (OSError, ValueError) as error:
-            errors.append(f"{photo['name']} : {error}")
+            label = photo['name'] + (f" ({photo['view']})" if 'view' in photo else '')
+            errors.append(f"{label} : {error}")
     if errors:
         print('\n'.join(errors), file=sys.stderr)
         return 1
-    total = sum(photo['bytes'] for photo in catalogue['photos'])
-    print(f"{len(paths)} photos vérifiées — {total:,} octets — empreintes SHA-256 conformes.")
+    total = sum(photo['bytes'] for photo in photos)
+    print(f"{len(paths)} photos vérifiées, dont {len(gallery['photos'])} de galerie — {total:,} octets — empreintes SHA-256 conformes.")
     return 0
 
 
