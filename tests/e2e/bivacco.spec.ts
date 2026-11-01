@@ -161,7 +161,9 @@ test('enriched GPS reliability and source controls remain visible in the details
     await controls.locator('summary').click()
     await expect(controls.getByRole('row').filter({ has: page.getByRole('rowheader', { name: 'GPS [fiabilité]', exact: true }) })).toContainText(reliability)
     await expect(controls).toContainText('Bivacco_Explorer_sources_et_controles.csv')
-    await expect(page.getByText(/Photo — statut dans le fichier source :/)).toBeVisible()
+    // The photo status is no longer summarised in the details, but its source value stays in the controls row.
+    await expect(page.getByText(/Photo — statut dans le fichier source :/)).toHaveCount(0)
+    await expect(controls.getByRole('rowheader', { name: 'Photo [statut]', exact: true })).toBeVisible()
     await page.getByRole('button', { name: 'Fermer', exact: true }).click()
   }
 })
