@@ -10,6 +10,8 @@ Première version : interface française responsive React / TypeScript, données
 
 Les deux CSV enrichis fournis complètent désormais les 57 lieux avec leurs coordonnées et 56 URL de photos. Les sources, contrôles et incertitudes restent consultables ; les anciens carnets locaux sont mis à jour sans réinitialiser les modifications personnelles.
 
+Les 57 photos, dont Resegotti ajouté séparément, sont désormais embarquées dans le site et dans le cache PWA. Le catalogue photo conserve les URL originales, les remplacements vérifiés et leur provenance sans modifier les CSV ni les carnets.
+
 Les données manquantes restent explicites. Les scores et les accès du backlog gardent leur provenance et leur saison. Une occurrence dans une feuille saisonnière n’est pas une observation datée des conditions de terrain.
 
 ## Phase 2 · Persistance partagée

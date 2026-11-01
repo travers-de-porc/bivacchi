@@ -23,3 +23,7 @@
 
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
+
+# Photo filenames contain their content hash, just like generated application assets.
+/images/bivouacs/*
+  Cache-Control: public, max-age=31536000, immutable

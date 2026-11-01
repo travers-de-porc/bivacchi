@@ -26,7 +26,8 @@ export const pwaOptions: Partial<VitePWAOptions> = {
   },
   workbox: {
     globPatterns: ['**/*.{js,css,html,svg,png,jpg,jpeg,webp,woff2,csv,json}'],
-    maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+    // The largest bundled original photograph (Regondi-Gavazzi) is 5.58 MB.
+    maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
     cleanupOutdatedCaches: true,
     navigateFallback: '/index.html',
     navigateFallbackDenylist: [/^\/api\//],

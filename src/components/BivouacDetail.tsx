@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
 import { getSeasonProfile, isValidCoordinates, safeUrl } from '@/lib/csv'
 import { getEnrichment } from '@/lib/enrichment'
+import { getLocalPhoto, getPhotoUrl } from '@/lib/photos'
 import { formatHours, formatNumber } from '@/lib/utils'
 import type { Bivouac, BivouacChanges, Season, SeasonalProfile, SourceRecord } from '@/types/bivouac'
 
@@ -109,7 +110,8 @@ export function BivouacDetail({ bivouac, onClose, onUpdate, initialSeason }: Biv
     return initial ? bivouac.seasons.indexOf(initial) : 0
   })
   const profile = bivouac.seasons[profileIndex]
-  const image = safeUrl(bivouac.imageUrl)
+  const image = getPhotoUrl(bivouac)
+  const localPhoto = getLocalPhoto(bivouac)
   const enrichment = getEnrichment(bivouac)
   const changedCoordinates = enrichment.coordinates !== null && (bivouac.coordinates?.lat !== enrichment.coordinates.lat || bivouac.coordinates?.lng !== enrichment.coordinates.lng)
   const links: [string, string | null][] = [
@@ -118,6 +120,7 @@ export function BivouacDetail({ bivouac, onClose, onUpdate, initialSeason }: Biv
     ['Source de la cotation ski', bivouac.links.skiSource],
     ['Source des coordonnées GPS', enrichment.gpsSource], ['Position du fichier source sur Google Maps', enrichment.gpsMapsUrl],
     ['Source de la photo', enrichment.photoSource],
+    ['Source de la photo locale', localPhoto?.sourceUrl ?? null],
   ]
   function update(changes: BivouacChanges) {
     const saved = onUpdate(bivouac.id, changes)
@@ -154,6 +157,8 @@ export function BivouacDetail({ bivouac, onClose, onUpdate, initialSeason }: Biv
           {changedCoordinates && <p className="notice">Coordonnées modifiées par vos soins. La fiabilité GPS déclarée, elle, concerne la position du fichier source.</p>}
           {enrichment.gpsReliability && <p className="notice">Fiabilité GPS déclarée : {enrichment.gpsReliability}</p>}
           {enrichment.gpsSource && !safeUrl(enrichment.gpsSource) && <p className="muted">Source GPS : {enrichment.gpsSource}</p>}
+          {localPhoto && <p className="muted">Photo incluse dans l’application : elle a rejoint le sac, sans ajouter un gramme au vôtre.</p>}
+          {localPhoto?.credit && <p className="muted">Crédit photo : {localPhoto.credit}</p>}
           {enrichment.photoStatus && <p className="muted">Photo — statut dans le fichier source : {enrichment.photoStatus}</p>}
           {enrichment.photoSource && !safeUrl(enrichment.photoSource) && <p className="muted">Source de la photo : {enrichment.photoSource}</p>}
           <div className="detail-links">{links.map(([label, value]) => { const href = safeUrl(value); return href ? <a key={label} href={href} target="_blank" rel="noopener noreferrer">{label}<ArrowUpRight size={16} /></a> : null })}</div>

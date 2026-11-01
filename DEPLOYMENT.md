@@ -40,6 +40,8 @@ npm run build
 
 Le build vérifie TypeScript et produit `dist/`, dont `index.html`, `assets/`, `manifest.webmanifest`, `registerSW.js`, `sw.js`, les icônes, `_headers` et `_redirects`. Le fichier `package-lock.json` est versionné et doit rester synchronisé avec `package.json`. Aucun script de conversion Python n’est nécessaire sur Cloudflare : les CSV de `data/` sont incorporés au build. Inclure les deux fichiers enrichis dans le commit envoyé à GitHub.
 
+Inclure également **`data/photos.json` et les 57 fichiers de `public/images/bivouacs/`** : Vite les copie sous `dist/images/bivouacs/`. Aucun téléchargement de photo externe n'est effectué pendant le build ou la consultation du jeu initial. Vérifier leur intégrité avec `python3 scripts/verify_photos.py`. Les noms des fichiers contiennent leur empreinte ; ils peuvent être servis avec un cache immutable. Le service worker précache aussi ces photos (environ 24,65 Mo).
+
 Pour examiner le résultat localement :
 
 ```sh
@@ -134,7 +136,7 @@ Après publication :
 2. Dans **DevTools → Network**, vérifier que le JavaScript et le CSS sous `/assets/` sont servis avec leur bon type, et non avec du HTML. `/sw.js` doit être du JavaScript, `/manifest.webmanifest` du JSON de manifeste et les icônes de vraies images.
 3. Contrôler les en-têtes de `/`, `/sw.js`, `/registerSW.js` et `/manifest.webmanifest` : `Cache-Control: no-cache`. Les fichiers hashés de `/assets/` ont `Cache-Control: public, max-age=31536000, immutable`. `_headers` est une configuration des ressources statiques, pas une page à visiter.
 4. Dans **DevTools → Application**, vérifier le manifeste, ses icônes 192/512 px et maskable, puis le service worker actif avec portée `/`.
-5. Attendre la fin de la mise en cache, recharger pour être contrôlé par le service worker, passer le navigateur hors connexion et recharger de nouveau. Le carnet doit rester utilisable. Les photos distantes et les tuiles OpenStreetMap demandent Internet ; les tuiles ne sont pas mises en cache par l’application.
+5. Attendre la fin de la mise en cache, recharger pour être contrôlé par le service worker, passer le navigateur hors connexion et recharger de nouveau. Le carnet et les 57 photos locales doivent rester utilisables, dont Resegotti. Les photos externes des imports personnels et les tuiles OpenStreetMap demandent Internet ; les tuiles ne sont pas mises en cache par l’application.
 6. Tester une envie, une visite et une note, puis recharger. Tester l’export CSV. Installer l’application depuis Chrome/Android ou via **Partager → Sur l’écran d’accueil** sur Safari/iOS.
 
 Exemple de contrôle HTTP, en remplaçant le domaine par l’URL Workers ou Pages effectivement renvoyée :

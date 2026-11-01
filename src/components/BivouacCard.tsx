@@ -2,13 +2,15 @@ import { useState } from 'react'
 import { ArrowUpRight, Bookmark, Check, Clock3, Mountain, MoveUpRight, MapPin, Tent } from 'lucide-react'
 import type { Bivouac, BivouacChanges, Season } from '@/types/bivouac'
 import { getSeasonProfile } from '@/lib/csv'
+import { getPhotoUrl } from '@/lib/photos'
 import { formatHours, formatNumber } from '@/lib/utils'
 import { Button } from './ui/button'
 
 export function BivouacImage({ bivouac, className = '' }: { bivouac: Bivouac; className?: string }) {
-  const [failed, setFailed] = useState(false)
+  const image = getPhotoUrl(bivouac)
+  const [failedImage, setFailedImage] = useState<string | null>(null)
   return <div className={`bivouac-image ${className}`}>
-    {bivouac.imageUrl && !failed ? <img src={bivouac.imageUrl} alt={bivouac.name} loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} />
+    {image && failedImage !== image ? <img src={image} alt={bivouac.name} loading="lazy" referrerPolicy="no-referrer" onError={() => setFailedImage(image)} />
       : <div className="image-placeholder"><Mountain strokeWidth={0.8} size={76} /><span>Photo aux abonnés absents</span></div>}
   </div>
 }

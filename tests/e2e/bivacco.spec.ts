@@ -4,8 +4,8 @@ import { exportBivouacsCsv, parseBivouacsCsv } from '../../src/lib/csv'
 
 const runtimeErrors = new WeakMap<Page, string[]>()
 
-// Remote imagery and map tiles are not required for any local-first interaction.
-// Blocking them makes these checks deterministic and also exercises fallback UI.
+// Bundled photos must work without their original hosts. Map tiles and any
+// photographs from future custom imports remain external network requests.
 test.beforeEach(async ({ page }) => {
   const errors: string[] = []
   runtimeErrors.set(page, errors)
@@ -28,6 +28,42 @@ async function openArben(page: Page) {
 async function importFixture(page: Page, content: string, filename = 'fixture.csv') {
   await page.getByLabel('Fichier CSV à importer').setInputFiles({ name: filename, mimeType: 'text/csv', buffer: Buffer.from(content) })
 }
+
+async function expectAllLocalPhotos(page: Page) {
+  const images = page.locator('.bivouac-card .bivouac-image img')
+  await expect(images).toHaveCount(57)
+  const results = await images.evaluateAll(async elements => Promise.all(elements.map(async element => {
+    const image = element as HTMLImageElement
+    image.loading = 'eager'
+    let decoded = true
+    try { await image.decode() } catch { decoded = false }
+    return {
+      name: image.alt,
+      path: image.getAttribute('src'),
+      local: new URL(image.src).origin === window.location.origin,
+      loaded: decoded && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0,
+    }
+  })))
+  expect(results.filter(result => !result.local || !result.path?.startsWith('/images/bivouacs/') || !result.loaded)).toEqual([])
+  await expect(page.locator('.bivouac-card .image-placeholder')).toHaveCount(0)
+}
+
+test('all 57 photographs decode locally, including the supplied Resegotti image, with external hosts blocked', async ({ page }) => {
+  await expectAllLocalPhotos(page)
+  await page.getByRole('textbox', { name: 'Rechercher un bivouac' }).fill('Resegotti')
+  await page.getByRole('link', { name: 'Capanna Luigina Resegotti', exact: true }).click()
+  const dialog = page.getByRole('dialog')
+  const image = dialog.locator('.detail-cover')
+  await expect(image).toHaveAttribute('src', /^\/images\/bivouacs\//)
+  expect(await image.evaluate(async element => {
+    const photo = element as HTMLImageElement
+    await photo.decode()
+    return photo.naturalWidth > 0 && photo.naturalHeight > 0
+  })).toBe(true)
+  await expect(dialog.getByRole('link', { name: 'Source de la photo locale', exact: true })).toHaveAttribute(
+    'href', 'https://www.loscarpone.cai.it/Sites/435/Media/2025/04/Resegotti%20(118).jpg',
+  )
+})
 
 test('search is accent-insensitive and seasonal cards agree with the list', async ({ page }) => {
   await page.getByRole('textbox', { name: 'Rechercher un bivouac' }).fill('herens')
@@ -190,7 +226,7 @@ test('phone navigation, filters, and details fit a 390px viewport', async ({ pag
   await expect(page.getByRole('heading', { name: 'Aucune envie ? Vraiment ?' })).toBeVisible()
 })
 
-test('production service worker makes the app and saved wishes available after an offline reload', async ({ page, context }) => {
+test('production service worker makes all local photographs and saved wishes available after an offline reload', async ({ page, context }) => {
   await page.evaluate(async () => { await navigator.serviceWorker.ready })
   await openArben(page)
   await page.getByRole('button', { name: 'Ajouter à mes envies', exact: true }).click()
@@ -199,8 +235,21 @@ test('production service worker makes the app and saved wishes available after a
   await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true)
   await context.setOffline(true)
   await page.reload({ waitUntil: 'domcontentloaded' })
-  await expect(page.getByRole('heading', { name: 'Lents, lourds, mais là-haut.' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
   await expect(page.locator('.bivouac-card')).toHaveCount(57)
+  // Most photos have never been displayed in this test: they must come from
+  // the service worker's precache, not from requests made while scrolling online.
+  await expectAllLocalPhotos(page)
+  await page.getByRole('textbox', { name: 'Rechercher un bivouac' }).fill('Resegotti')
+  await page.getByRole('link', { name: 'Capanna Luigina Resegotti', exact: true }).click()
+  const offlinePhoto = page.getByRole('dialog').locator('.detail-cover')
+  expect(await offlinePhoto.evaluate(async element => {
+    const image = element as HTMLImageElement
+    await image.decode()
+    return image.naturalWidth > 0 && image.naturalHeight > 0
+  })).toBe(true)
+  await page.getByRole('button', { name: 'Fermer', exact: true }).click()
+  await page.getByRole('button', { name: 'Effacer la recherche', exact: true }).click()
   await page.getByRole('navigation', { name: 'Navigation principale' }).getByRole('button', { name: /Mes envies/ }).click()
   await expect(page.locator('.bivouac-card')).toHaveCount(1)
   await expect(page.locator('.bivouac-card')).toContainText('Arbenbiwak SAC')

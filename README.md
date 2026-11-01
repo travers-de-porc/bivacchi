@@ -32,7 +32,7 @@ npm run build
 npm run test:e2e
 ```
 
-Playwright démarre automatiquement la prévisualisation sur le port 4173, ou réutilise celle qui fonctionne déjà. Les photos externes sont remplacées par une illustration neutre lorsqu’elles ne peuvent pas être chargées.
+Playwright démarre automatiquement la prévisualisation sur le port 4173, ou réutilise celle qui fonctionne déjà. Les tests vérifient notamment le chargement des 57 photos locales, y compris sans connexion. Une photo indisponible dans un import personnel conserve le remplacement visuel prévu.
 
 ## Ce que ça fait
 
@@ -45,7 +45,9 @@ Playwright démarre automatiquement la prévisualisation sur le port 4173, ou r�
 
 ## Source des données
 
-L'application utilise **`data/Bivacco_Explorer_enrichi.csv`** : **146 lignes saisonnières regroupées en 57 lieux**, avec **57 paires de coordonnées explicites et 56 URL de photos**. `data/Bivacco_Explorer_sources_et_controles.csv` apporte les sources et les contrôles de ces 57 lieux. Leur provenance et les réserves de fiabilité sont consultables dans les fiches ; la disponibilité des photos distantes n'est pas garantie.
+L'application utilise **`data/Bivacco_Explorer_enrichi.csv`** : **146 lignes saisonnières regroupées en 57 lieux**, avec **57 paires de coordonnées explicites et 56 URL de photos**. `data/Bivacco_Explorer_sources_et_controles.csv` apporte les sources et les contrôles de ces 57 lieux. Leur provenance et les réserves de fiabilité sont consultables dans les fiches.
+
+Les **57 lieux disposent maintenant d'une photo servie localement**, dont celle de Resegotti fournie séparément. `data/photos.json` associe les URL historiques aux fichiers de `public/images/bivouacs/`, avec provenance, date de vérification et empreinte SHA-256. Trois URL en erreur ont été remplacées par des photos sourcées ; les CSV d'origine restent intacts. Le bilan détaillé et les commandes de vérification sont dans [docs/PHOTO_AUDIT.md](docs/PHOTO_AUDIT.md).
 
 Le classeur historique **`data/Bivacco Backlog.xlsx`** et sa conversion `data/bivouacs.csv` sont conservés intacts. Pour reproduire uniquement cette conversion historique :
 
@@ -79,7 +81,7 @@ La PWA est activée dans le build de production, désactivée avec `npm run dev`
 - **iPhone / iPad / Safari** : Partager → « Sur l’écran d’accueil ».
 - **Ordinateur** : utiliser l’action d’installation du navigateur lorsqu’elle est disponible.
 
-Après une première ouverture en ligne et la mise en cache terminée, l’interface, le jeu de données initial et les ressources locales sont disponibles hors connexion. Les modifications locales restent enregistrées. Les tuiles OpenStreetMap, les pages sources et les éventuelles images distantes nécessitent une connexion. Les tuiles ne sont ni préchargées ni conservées par le service worker. Une mise à jour du site prend effet après fermeture des onglets de l’ancienne version puis réouverture, afin de ne pas interrompre une modification en cours.
+Après une première ouverture en ligne et la mise en cache terminée, l’interface, le jeu de données initial et les 57 photos locales sont disponibles hors connexion. Les photos originales représentent environ 24,65 Mo à télécharger pour ce premier cache. Les modifications locales restent enregistrées. Les tuiles OpenStreetMap, les pages sources et les photos externes ajoutées par des imports personnels nécessitent une connexion. Les tuiles ne sont ni préchargées ni conservées par le service worker. Une mise à jour du site prend effet après fermeture des onglets de l’ancienne version puis réouverture, afin de ne pas interrompre une modification en cours.
 
 ## Cloudflare Workers
 
@@ -105,6 +107,7 @@ La procédure complète, les contrôles PWA et le parcours **Cloudflare Pages en
 - `src/types/bivouac.ts` : modèle métier TypeScript, provenance et distinction entre lieux et observations datées.
 - `src/lib/csv.ts` : import, normalisation, regroupement saisonnier et export sans perte des données sources.
 - `src/lib/enrichment.ts` : rapprochement des contrôles et lecture de la provenance GPS/photo.
+- `src/lib/photos.ts` et `data/photos.json` : résolution des photos locales sans modifier les sources ni les sauvegardes personnelles.
 - `src/lib/seed-update.ts` : mise à jour du jeu initial sans écraser les différences personnelles.
 - `src/lib/repository.ts` : persistance locale versionnée, validation et récupération des sauvegardes.
 - `src/lib/filters.ts` : recherche, filtres et tri indépendants de la présentation.
@@ -113,7 +116,7 @@ La procédure complète, les contrôles PWA et le parcours **Cloudflare Pages en
 - `src/App.tsx` et `src/index.css` : navigation, assemblage des vues et identité visuelle responsive.
 - `data/` : classeur original, conversion historique, CSV enrichi et sources/contrôles.
 - `scripts/` : conversion reproductible indépendante du frontend.
-- `public/` : icônes, ressources statiques et en-têtes Cloudflare.
+- `public/` : icônes, photos locales, ressources statiques et en-têtes Cloudflare.
 - `wrangler.jsonc` : publication des ressources statiques sur Workers et repli SPA.
 - `pwa.config.ts` : manifeste et politique de cache de l’application.
 
